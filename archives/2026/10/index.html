@@ -291,6 +291,28 @@
 <noscript>
   <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
 </noscript>
+<script>
+// 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+(function () {
+  var bgs = [
+    '/images/bg/bg-1.svg',
+    '/images/bg/bg-2.svg',
+    '/images/bg/bg-3.svg',
+    '/images/bg/bg-4.svg',
+    '/images/bg/bg-5.svg',
+    '/images/bg/bg-6.svg'
+  ];
+  var current = 0;
+  // 预加载，避免首次点击时闪白
+  bgs.forEach(function (u) { var img = new Image(); img.src = u; });
+  document.addEventListener('click', function () {
+    var next;
+    do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
+    current = next;
+    document.body.style.backgroundImage = 'url(' + bgs[current] + ')';
+  });
+})();
+</script>
 
 </body>
 </html>
