@@ -1414,7 +1414,7 @@ pre code {
     vertical-align: middle;
   }
   .links-of-author a::before {
-    background: #d095e4;
+    background: #de812f;
     display: inline-block;
     margin-right: 3px;
     transform: translateY(-2px);
@@ -3043,8 +3043,17 @@ header.header {
     padding: 10px 12px;
   }
 }
-body {
-  background: url("/images/bg/bg-1.svg") no-repeat center center;
+:root {
+  --site-bg: url("/images/bg/bg-1.svg");
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: var(--site-bg) no-repeat center center;
   background-size: cover;
-  background-attachment: fixed;
 }

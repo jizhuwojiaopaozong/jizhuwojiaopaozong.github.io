@@ -293,6 +293,7 @@
 </noscript>
 <script>
 // 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+// 背景通过 CSS 变量 --site-bg 挂在 body::before 固定层上（见 styles.styl）
 (function () {
   var bgs = [
     '/images/bg/bg-1.svg',
@@ -309,7 +310,7 @@
     var next;
     do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
     current = next;
-    document.body.style.backgroundImage = 'url(' + bgs[current] + ')';
+    document.documentElement.style.setProperty('--site-bg', 'url(' + bgs[current] + ')');
   });
 })();
 </script>
