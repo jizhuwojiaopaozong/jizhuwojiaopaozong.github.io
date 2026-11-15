@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jizhuwojiaopaozong.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="B站课程《DeepSeek Engram 论文串讲》的完整课堂笔记，附 16 个概念卡片表与 7 道面试速答自测题">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）">
+<meta property="og:url" content="https://jizhuwojiaopaozong.github.io/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/index.html">
+<meta property="og:site_name" content="Gao HongYe">
+<meta property="og:description" content="B站课程《DeepSeek Engram 论文串讲》的完整课堂笔记，附 16 个概念卡片表与 7 道面试速答自测题">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-15T13:50:00.000Z">
+<meta property="article:modified_time" content="2026-11-15T13:49:00.852Z">
+<meta property="article:author" content="高鸿烨">
+<meta property="article:tag" content="DeepSeek">
+<meta property="article:tag" content="Engram">
+<meta property="article:tag" content="N-gram">
+<meta property="article:tag" content="Memory Network">
+<meta property="article:tag" content="论文笔记">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jizhuwojiaopaozong.github.io/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jizhuwojiaopaozong.github.io/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/","path":"2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/","title":"DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测） | Gao HongYe</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/next-theme-pjax/0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/medium-zoom/1.1.0/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pangu/7.2.1/pangu.umd.js" integrity="sha256-kRsxecBnwG6mULFPe2E6UKnNm8XfDOuDwCOprjLZuX8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Gao HongYe</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">ghy Blogs</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Engram-%E6%83%B3%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">1. Engram 想解决什么问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B9%9D%E4%B9%9D%E4%B9%98%E6%B3%95%E8%A1%A8%E7%B1%BB%E6%AF%94"><span class="nav-number">3.</span> <span class="nav-text">2. 九九乘法表类比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Engram-%E4%B8%80%E8%AF%8D%E7%9A%84%E7%94%B1%E6%9D%A5"><span class="nav-number">4.</span> <span class="nav-text">3. Engram 一词的由来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-FFN-%E5%B1%82%E5%B0%B1%E6%98%AF-Key-Value-Memory"><span class="nav-number">5.</span> <span class="nav-text">4. FFN 层就是 Key-Value Memory</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-PKM-%E4%B8%8E%E7%A8%80%E7%96%8F-Memory-Layer"><span class="nav-number">6.</span> <span class="nav-text">5. PKM 与稀疏 Memory Layer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%97%A8%E6%8E%A7%E3%80%81%E5%A4%96%E9%83%A8%E8%AE%B0%E5%BF%86%E4%B8%8E-Memory-%E6%94%AF%E7%BA%BF%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">6. 门控、外部记忆与 Memory 支线总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E4%BB%8E%E6%9D%A1%E4%BB%B6%E6%A6%82%E7%8E%87%E5%88%B0-N-gram-%E6%9F%A5%E8%A1%A8"><span class="nav-number">8.</span> <span class="nav-text">7. 从条件概率到 N-gram 查表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-N-Grammer-%E6%8A%8A-N-gram-%E5%A1%9E%E5%9B%9E-Transformer"><span class="nav-number">9.</span> <span class="nav-text">8. N-Grammer 把 N-gram 塞回 Transformer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E6%96%B9%E6%B3%95%E8%AE%BA%E6%8F%92%E6%9B%B2%EF%BC%9A%E5%8C%96%E7%AE%80%E4%B8%BA%E7%B9%81%E4%B8%8E%E5%8C%96%E7%B9%81%E4%B8%BA%E7%AE%80"><span class="nav-number">10.</span> <span class="nav-text">9. 方法论插曲：化简为繁与化繁为简</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-f-gram-%E4%B8%8E%E6%9B%B4%E5%A4%A7%E7%9A%84-Embedding-%E5%B1%82"><span class="nav-number">11.</span> <span class="nav-text">10. f-gram 与更大的 Embedding 层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-Engram-%E6%9E%B6%E6%9E%84%EF%BC%9A%E7%94%A8%E6%9F%A5%E8%A1%A8%E5%AE%9E%E7%8E%B0%E6%9D%A1%E4%BB%B6%E8%AE%B0%E5%BF%86"><span class="nav-number">12.</span> <span class="nav-text">11. Engram 架构：用查表实现条件记忆</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-%E5%B7%A5%E7%A8%8B%E7%BB%86%E8%8A%82%EF%BC%9Atokenizer-%E5%8E%8B%E7%BC%A9%E4%B8%8E%E5%A4%9A%E5%A4%B4-hash"><span class="nav-number">13.</span> <span class="nav-text">12. 工程细节：tokenizer 压缩与多头 hash</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C%EF%BC%9AU-%E5%9E%8B%E5%88%86%E9%85%8D%E4%B8%8E%E6%B6%88%E8%9E%8D"><span class="nav-number">14.</span> <span class="nav-text">13. 实验结果：U 型分配与消融</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#14-%E6%80%BB%E7%BB%93%E4%B8%8E%E5%B1%95%E6%9C%9B"><span class="nav-number">15.</span> <span class="nav-text">14. 总结与展望</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE"><span class="nav-number">16.</span> <span class="nav-text">本讲知识地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93"><span class="nav-number">17.</span> <span class="nav-text">本讲小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87"><span class="nav-number">18.</span> <span class="nav-text">概念卡片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E5%8F%AF%E8%83%BD%E4%B8%89%E8%A7%92"><span class="nav-number">18.1.</span> <span class="nav-text">不可能三角</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Sparsity"><span class="nav-number">18.2.</span> <span class="nav-text">Sparsity</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Engram"><span class="nav-number">18.3.</span> <span class="nav-text">Engram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MoE"><span class="nav-number">18.4.</span> <span class="nav-text">MoE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Value-Memory"><span class="nav-number">18.5.</span> <span class="nav-text">Key-Value Memory</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E7%A5%9E%E7%BB%8F%E5%85%83"><span class="nav-number">18.6.</span> <span class="nav-text">知识神经元</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E6%B7%B1%E5%BA%A6"><span class="nav-number">18.7.</span> <span class="nav-text">概念深度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Product-Key-Memory"><span class="nav-number">18.8.</span> <span class="nav-text">Product Key Memory</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%A8%E6%8E%A7%E6%9C%BA%E5%88%B6"><span class="nav-number">18.9.</span> <span class="nav-text">门控机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E8%AE%B0%E5%BF%86"><span class="nav-number">18.10.</span> <span class="nav-text">外部记忆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#N-gram"><span class="nav-number">18.11.</span> <span class="nav-text">N-gram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Codebook"><span class="nav-number">18.12.</span> <span class="nav-text">Codebook</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hash-%E6%9F%A5%E8%A1%A8"><span class="nav-number">18.13.</span> <span class="nav-text">Hash 查表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#f-gram"><span class="nav-number">18.14.</span> <span class="nav-text">f-gram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tokenizer-%E5%8E%8B%E7%BC%A9"><span class="nav-number">18.15.</span> <span class="nav-text">tokenizer 压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E5%B1%82%E7%BA%A7"><span class="nav-number">18.16.</span> <span class="nav-text">记忆层级</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%B5%8B%E9%A2%98%EF%BC%88%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94%EF%BC%89"><span class="nav-number">19.</span> <span class="nav-text">自测题（面试速答）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%86%E9%A2%91%E6%97%B6%E9%97%B4%E7%B4%A2%E5%BC%95"><span class="nav-number">20.</span> <span class="nav-text">视频时间索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95A%EF%BC%9A%E6%A6%82%E5%BF%B5%E8%A1%A8%EF%BC%88%E5%A4%8D%E4%B9%A0%E5%8B%BE%E9%80%89%EF%BC%89"><span class="nav-number">21.</span> <span class="nav-text">附录A：概念表（复习勾选）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-1-%E9%9B%86-%C2%B7-DeepSeek-Engram-%E8%AE%BA%E6%96%87%E4%B8%B2%E8%AE%B2%EF%BC%9A%E4%BB%8E-Memory-Network-%E5%88%B0-N-gram-Embedding"><span class="nav-number">21.1.</span> <span class="nav-text">第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95B%EF%BC%9A%E8%AF%BE%E7%A8%8B%E8%87%AA%E6%B5%8B%EF%BC%887-%E9%A2%98%EF%BC%89"><span class="nav-number">22.</span> <span class="nav-text">附录B：课程自测（7 题）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%A8%E9%83%A8%E9%A2%98%E7%9B%AE%EF%BC%88%E6%8C%89%E9%9B%86%EF%BC%89"><span class="nav-number">22.1.</span> <span class="nav-text">全部题目（按集）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC-1-%E9%9B%86-%C2%B7-DeepSeek-Engram-%E8%AE%BA%E6%96%87%E4%B8%B2%E8%AE%B2%EF%BC%9A%E4%BB%8E-Memory-Network-%E5%88%B0-N-gram-Embedding-1"><span class="nav-number">22.2.</span> <span class="nav-text">第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="高鸿烨"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">高鸿烨</p>
+  <div class="site-description" itemprop="description">Gao HongYe 的个人博客</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jizhuwojiaopaozong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:m15944834309@163.com" title="E-Mail → mailto:m15944834309@163.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://github.com/jizhuwojiaopaozong" title="https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener" target="_blank">Gao HongYe</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://theme-next.js.org/" title="https:&#x2F;&#x2F;theme-next.js.org" rel="noopener" target="_blank">NexT</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jizhuwojiaopaozong.github.io/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="高鸿烨">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Gao HongYe">
+      <meta itemprop="description" content="Gao HongYe 的个人博客">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测） | Gao HongYe">
+      <meta itemprop="description" content="B站课程《DeepSeek Engram 论文串讲》的完整课堂笔记，附 16 个概念卡片表与 7 道面试速答自测题">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2026-11-15 21:50:00 / 修改时间：21:49:00" itemprop="dateCreated datePublished" datetime="2026-11-15T21:50:00+08:00">2026-11-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/N-gram/" itemprop="url" rel="index"><span itemprop="name">N-gram</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+            <div class="post-description">B站课程《DeepSeek Engram 论文串讲》的完整课堂笔记，附 16 个概念卡片表与 7 道面试速答自测题</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>本文由三部分整合而成：<strong>课堂笔记正文</strong>（讲解体 + 知识地图 + 时间索引深链）、<strong>附录A 概念表</strong>（可勾选掌握状态复习）、<strong>附录B 课程自测</strong>（7 道面试速答题）。来源视频见正文引语块。</p>
+</blockquote>
+<blockquote>
+<p>核心主线：Engram 不是凭空出现的新架构——它把 Memory 支线的「FFN 即键值记忆、稀疏化、查表」与 N-gram 支线的「相邻词组合近似语言」合流，用 hash 查表把常识性知识检索从逐层计算变成 O(1) 查表。<br>本讲目标：读完你能回答「Transformer 为什么靠计算做知识检索、Engram 如何把它变成查表」「Memory 与 N-gram 两条支线各贡献了哪些思想」「MoE 和 Engram 为什么互补、算力怎么分」<br>课程来源：DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（B站 BV1x3zWB6EU6，UP主：EZ-Encoder，约 62 分钟）</p>
+</blockquote>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#1-engram-%E6%83%B3%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98">1. Engram 想解决什么问题</a></li>
+<li><a href="#2-%E4%B9%9D%E4%B9%9D%E4%B9%98%E6%B3%95%E8%A1%A8%E7%B1%BB%E6%AF%94">2. 九九乘法表类比</a></li>
+<li><a href="#3-engram-%E4%B8%80%E8%AF%8D%E7%9A%84%E7%94%B1%E6%9D%A5">3. Engram 一词的由来</a></li>
+<li><a href="#4-ffn-%E5%B1%82%E5%B0%B1%E6%98%AF-key-value-memory">4. FFN 层就是 Key-Value Memory</a></li>
+<li><a href="#5-pkm-%E4%B8%8E%E7%A8%80%E7%96%8F-memory-layer">5. PKM 与稀疏 Memory Layer</a></li>
+<li><a href="#6-%E9%97%A8%E6%8E%A7%E5%A4%96%E9%83%A8%E8%AE%B0%E5%BF%86%E4%B8%8E-memory-%E6%94%AF%E7%BA%BF%E6%80%BB%E7%BB%93">6. 门控、外部记忆与 Memory 支线总结</a></li>
+<li><a href="#7-%E4%BB%8E%E6%9D%A1%E4%BB%B6%E6%A6%82%E7%8E%87%E5%88%B0-n-gram-%E6%9F%A5%E8%A1%A8">7. 从条件概率到 N-gram 查表</a></li>
+<li><a href="#8-n-grammer-%E6%8A%8A-n-gram-%E5%A1%9E%E5%9B%9E-transformer">8. N-Grammer 把 N-gram 塞回 Transformer</a></li>
+<li><a href="#9-%E6%96%B9%E6%B3%95%E8%AE%BA%E6%8F%92%E6%9B%B2%E5%8C%96%E7%AE%80%E4%B8%BA%E7%B9%81%E4%B8%8E%E5%8C%96%E7%B9%81%E4%B8%BA%E7%AE%80">9. 方法论插曲：化简为繁与化繁为简</a></li>
+<li><a href="#10-f-gram-%E4%B8%8E%E6%9B%B4%E5%A4%A7%E7%9A%84-embedding-%E5%B1%82">10. f-gram 与更大的 Embedding 层</a></li>
+<li><a href="#11-engram-%E6%9E%B6%E6%9E%84%E7%94%A8%E6%9F%A5%E8%A1%A8%E5%AE%9E%E7%8E%B0%E6%9D%A1%E4%BB%B6%E8%AE%B0%E5%BF%86">11. Engram 架构：用查表实现条件记忆</a></li>
+<li><a href="#12-%E5%B7%A5%E7%A8%8B%E7%BB%86%E8%8A%82tokenizer-%E5%8E%8B%E7%BC%A9%E4%B8%8E%E5%A4%9A%E5%A4%B4-hash">12. 工程细节：tokenizer 压缩与多头 hash</a></li>
+<li><a href="#13-%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9Cu-%E5%9E%8B%E5%88%86%E9%85%8D%E4%B8%8E%E6%B6%88%E8%9E%8D">13. 实验结果：U 型分配与消融</a></li>
+<li><a href="#14-%E6%80%BB%E7%BB%93%E4%B8%8E%E5%B1%95%E6%9C%9B">14. 总结与展望</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE">本讲知识地图</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93">本讲小结</a></li>
+<li><a href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87">概念卡片</a></li>
+<li><a href="#%E8%87%AA%E6%B5%8B%E9%A2%98%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94">自测题（面试速答）</a></li>
+<li><a href="#%E8%A7%86%E9%A2%91%E6%97%B6%E9%97%B4%E7%B4%A2%E5%BC%95">视频时间索引</a></li>
+</ul>
+<hr>
+<h2 id="1-Engram-想解决什么问题"><a href="#1-Engram-想解决什么问题" class="headerlink" title="1. Engram 想解决什么问题"></a>1. Engram 想解决什么问题</h2><p>DeepSeek 这篇名为 Engram 的论文，针对的是 Transformer 架构的 Memory 问题：让这类架构做更高效的 <strong>Knowledge Retrieval（知识检索）</strong>。这个领域里已经有大量引入或改进 Transformer Memory 的工作，Engram 是这条脉络的延续，很多想法直接来自前序工作。</p>
+<p>它的解题思路一个词就能概括：引入 <strong>Sparsity（稀疏性）</strong>。为什么要稀疏？因为大家还想继续沿用 Scaling Law 把模型做大，而早期的 Dense 模型头上悬着一个<strong>不可能三角</strong>：模型的 Performance、Compute Cost（FLOPs）、Model Size 三者很难同时优化——想让性能上升，要么加参数、要么加计算，几乎不可能在提升性能的同时把另外两个降下来。</p>
+<p>稀疏化的作用就是把这个三角的边切断。MoE 架构让 Model Size 和 Compute Cost 解耦：参数量增加时，计算量可以被控制住不跟着涨。把 DeepSeek 前几篇论文排开看，Sparsity 这条主线贯穿始终：</p>
+<ul>
+<li>MoE 论文：把 Transformer 的 MLP 层换成多个更小的 expert MLP，激活时只计算一部分参数，实现 Sparse Compute</li>
+<li>V3 论文：在 Attention 侧引入 <strong>MLA</strong>，本质是 low rank 分解——计算更小的矩阵而不是原始大矩阵，思路上与稀疏相近</li>
+<li>随后的 <strong>Sparse Attention（DSA）</strong>：在 Attention 侧直接应用稀疏化</li>
+<li>这篇 Engram：回到 MLP 一侧继续改进——虽然 MLP 已经换成 MoE，但 basic knowledge 仍要靠计算得出，非常低效，于是加入 Engram 模块用 hash 查表做知识提取</li>
+</ul>
+<blockquote>
+<p><strong>记住这个就够了</strong>：DeepSeek 全系列的核心思想是 Sparsity，目的是绕开 Performance&#x2F;Compute&#x2F;Size 的不可能三角继续 scale up；Engram 是这条主线在 MLP 一侧的最新落子。</p>
+</blockquote>
+<hr>
+<h2 id="2-九九乘法表类比"><a href="#2-九九乘法表类比" class="headerlink" title="2. 九九乘法表类比"></a>2. 九九乘法表类比</h2><p>人计算 324×78 这样的多位数乘法时靠两种能力：一是九九乘法表，小学就背下来了，遇到 4×8 直接说出 32——这是存在 <strong>Memory</strong> 里的知识；二是进位、先算哪一位再算哪一位这些规则——这是 <strong>Reasoning</strong>。</p>
+<p>现在的 Transformer 架构恰恰缺了 Memory 这一半。它像一个没背乘法表的人：遇到 4×8 只能现场算 8+8+8+8。凡是本可以查表的简单操作都要重新计算一遍，浪费大量计算资源。</p>
+<p>Engram 的做法：把这类 knowledge 做成一个巨大的 Embedding 表放进模型，需要时直接查。<strong>打个比方：</strong> 这等于给模型发了一张九九乘法表小抄，模型需要时就去小抄里查，而不是每次现推。有了背景知识之后再看这篇论文，会发现核心思想就是这么简单。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：Engram 的核心思想 &#x3D; 让模型对静态知识从「每次现算」变成「直接查表」，把算力省下来留给真正的推理。</p>
+</blockquote>
+<hr>
+<h2 id="3-Engram-一词的由来"><a href="#3-Engram-一词的由来" class="headerlink" title="3. Engram 一词的由来"></a>3. Engram 一词的由来</h2><p>DeepSeek 在这里玩了一个谐音梗，一词双关。第一层：Engram 发音很像 <strong>N-gram</strong>——NLP 领域早期的经典方法，这是论文的技术支线之一。第二层：Engram 本身就是个真实的科学词汇，意思是「记忆」。</p>
+<p>20 世纪初，科学家 Richard Semon 提出了这个词：他认为大脑中存在一种 neural substrate（神经基础）负责存储和提取记忆——某些神经元细胞经过化学或物理改变成为 Engram，保留了记忆；当相关线索被提起时，这类细胞被重新激活，实现 memory retrieval。这个概念长期不被认可，Semon 郁郁不得志最终自杀；后续科学家寻找 Engram 细胞的证据也失败了很长时间。转机来自光遗传学等新技术，实验终于找到了这类细胞：在特殊染色的图像里，记忆被唤醒时呈现粉红色的神经元就是 <strong>Engram 细胞</strong>，旁边未唤醒的则是 Non-Engram 细胞。</p>
+<p>所以 DeepSeek 用这个词非常贴切：机制上对应 N-gram 查表，语义上对应「模型里的记忆细胞」。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：Engram &#x3D; N-gram 的谐音 + 神经科学中真实存在的「记忆细胞」，这个词本身就预告了论文的两条技术支线。</p>
+</blockquote>
+<hr>
+<h2 id="4-FFN-层就是-Key-Value-Memory"><a href="#4-FFN-层就是-Key-Value-Memory" class="headerlink" title="4. FFN 层就是 Key-Value Memory"></a>4. FFN 层就是 Key-Value Memory</h2><p>第一条支线：Memory 方向的工作。Transformer 提出后大家其实并不理解它为什么有效，于是反过来研究它的原理，几篇论文层层递进。Facebook 2019 年提出<strong>语言模型本身就可以作为 Knowledge Base</strong>——在此之前 NLP 做知识库的常用方法是 Knowledge Graph（节点和边表示知识关系，给定 query 去图里提取答案），而基于 Transformer 的语言模型（如 BERT）已经能把知识存在参数里，不再需要外部的图。Google 2020 年对 T5 得出类似结论，并且说了一句很关键的话：模型回答一些问题<strong>不需要外部知识或 context，直接 lookup 参数中存储的信息</strong>——这正是 Engram 想做的事的雏形。</p>
+<p>但知识到底是怎么存的？2021 年的一篇论文给出了奠基性回答：<strong>FFN 层就是一个 key-value memory</strong>。FFN 一般有两层参数：第一层参数当 <strong>key</strong>，第二层参数当 <strong>value</strong>。输入先与第一层参数做矩阵乘法，本质是内积、是相似度计算——在参数记住的各种 pattern（比如 “It will take a”、”every once in a”）里找和输入 pattern 相似的，得到权重（不像的 pattern 权重接近 0，像的可能 1.5）；然后用这个权重对第二层的 value 做加权平均，把知识提取出来（比如输入 “Stay with you for…” 时，”while” 对应的 value 权重最大，被查询出来）。<strong>打个比方：</strong> 去图书馆借书——第一层参数是书的 index（key），第二层参数是书的内容（value），有了 index 就能快速找到书。</p>
+<p>微软 2022 年再进一步，提出<strong>知识神经元（Knowledge Neurons）</strong>：FFN 里特定的神经元对应特定的知识，问 Ireland 的首都，一组特定神经元被激活，然后回答 Dublin。注意这里所有的 key 和 value 都是可学习参数，靠反向传播更新。</p>
+<p>问题也随之暴露：这种存取知识的方式<strong>每一层都要经过大量计算</strong>，即使后来有些工作把过程变稀疏，仍然要算。DeepSeek 的追问是：像「Ireland 的首都」这种相对固定的知识，能不能直接搞一个参数表，用时查询，跳过 FFN 的大量计算？另一篇提出 <strong>Concept Depth（概念深度）</strong> 的论文佐证了这个动机：简单 task 在浅层就能形成概念，复杂 task 要到深层才能形成，弱一点的模型可能走到最后一层概念还没形成——对常识而言，逐层计算这种方式本身就不划算，直接放外部 memory 里让模型去提取就好。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：FFN 层本质是 key-value memory（一层参数是 key、二层参数是 value），知识神经元是它的细化；但靠计算提取知识太贵、深概念还受层数限制——这就是 Engram 的动机。</p>
+</blockquote>
+<hr>
+<h2 id="5-PKM-与稀疏-Memory-Layer"><a href="#5-PKM-与稀疏-Memory-Layer" class="headerlink" title="5. PKM 与稀疏 Memory Layer"></a>5. PKM 与稀疏 Memory Layer</h2><p>Facebook 2019 年的另一篇论文提出了 <strong>Product Key Memory（PKM）</strong>，后续大量 Transformer Memory 工作都是对它的改进，Engram 里也能看到很多它的思想。这篇论文有三个重要贡献：</p>
+<ul>
+<li>提出了一个<strong>独立的 Memory Layer</strong>——之前的工作还在 FFN 上做文章，它单独造了一层</li>
+<li>把 dense memory 变成 <strong>sparse memory</strong>：原始 FFN 里所有 key 都会参与计算（只是权重有大有小），sparse memory 则是给定 query 只用少部分 top-k 的 key，不相关的 key 压根不碰，计算量显著减少——和 MoE 的道理一样</li>
+<li>引入了 <strong>lookup（查表）机制</strong>，让查 key 非常高效——DeepSeek Engram 正是基于这种思想，只不过 PKM 用 product key 查表，DeepSeek 用 hash 查表</li>
+</ul>
+<p>基本流程：输入先经过一个 query network（可以就是一个简单线性层做 projection）映射成 query；用 k-nearest-neighbor 在 key 里找 top-k（比如 top-2）；取出对应的 value 做加权平均输出。</p>
+<p>瓶颈在于 key 可能非常庞大——图书馆里书太多，index 太多，拿 query 逐个比对会非常慢。product key 的办法是「切分」：假如原始 key 是 128 维向量，从中切成两半，前一半作为第一套子 key、后一半作为第二套子 key；query 也同样切开，前半查第一套、后半查第二套，最后把结果组合。每套子 key 只有很少的可能（比如各 3 种），但两套的排列组合（外积）能表达巨大的 key 空间——想象一个矩阵，行向量和列向量的组合覆盖整个矩阵。这样就极大减少了需要存储和比对的 key 数目，查询速度大幅提升。用法是在某些层把 FFN 换成 PKM layer。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：PKM 用「子 key 切分 + 组合」的查表方式实现了稀疏 key-value memory，让 Memory Layer 既省计算又能做大——Engram 继承了查表思想，只是把 product key 换成了 hash。</p>
+</blockquote>
+<hr>
+<h2 id="6-门控、外部记忆与-Memory-支线总结"><a href="#6-门控、外部记忆与-Memory-支线总结" class="headerlink" title="6. 门控、外部记忆与 Memory 支线总结"></a>6. 门控、外部记忆与 Memory 支线总结</h2><p>Meta 随后把 memory layer 继续 scale up，一路做到 <strong>128B 的 memory 参数</strong>——相当恐怖。之所以能这么大，正是 key-value lookup 机制：可以不断增加可训练参数去存储和提取信息，却不增加模型的 FLOPs。这篇论文还对原始 memory layer 做了一个改进：在旁边加了一个 <strong>gating（门控）</strong>，对 memory layer 提取出的信息做进一步筛选——提取结果可能有噪音或不准确，用门控再过滤一遍。这个 gating 机制后来被 DeepSeek Engram 直接沿用，可见这个领域的工作是连续、有传承的。</p>
+<p>前面都是拿<strong>网络参数</strong>当 memory；能不能拿<strong>外部数据</strong>当 memory（类似 RAG）？可以，而且工作不少。代表是 DeepMind 2022 年的 <strong>RETRO</strong>：把 input tokens 切成 chunk（讲者认为这种切法和 Engram 的 chunk、和 N-gram 本质非常像，区别只是 N-gram 要做 sliding window 枚举所有组合，这里直接切），用训练好的 BERT 在外部 database 里 retrieval 最相近的 key-value，再送进 cross-chunk attention 与输入 query 做 attention，把外部信息注入 Transformer。注意这里的外部信息是固定的、不可训练的。</p>
+<p>最后用 Google 2023 年的一篇论文给整条支线收束——它的核心思想也是 Engram 的核心思想：如果能给大语言模型一个巨大的、含参数的 <strong>external table</strong>，并且有一种足够快的 <strong>sparsely lookup</strong> 方法，就能在不影响推理时间的前提下极大提高模型的 predictive capacity。额外的参数有两种用法：一是做更丰富的 <strong>input representation</strong>——映射到 Engram，就是用 N-gram 表征输入；二是把 table 理解为 <strong>expert function</strong>，那就是 MoE 的变种。查表方式也有多种：routing function（MoE 用的）、直接用 token id、hash function、softmax——只要足够快就行。DeepSeek 选了最简单的 hash function。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：Memory 支线的终点是一句话——「巨大的外部参数表 + 便宜的稀疏查表」；Engram 就是这句话的工程实现，gating 和 offload 思想也早在这条支线里出现过。</p>
+</blockquote>
+<hr>
+<h2 id="7-从条件概率到-N-gram-查表"><a href="#7-从条件概率到-N-gram-查表" class="headerlink" title="7. 从条件概率到 N-gram 查表"></a>7. 从条件概率到 N-gram 查表</h2><p>第二条支线：N-gram。讲者读 PhD 时就用 N-gram 的统计方法给 DNA 数据建模，这是他很熟的领域。语言建模本质是学一个<strong>条件概率</strong>：给定一段话，下一个词是什么的概率。比如 “The water of Walden pond is so beautifully” 后面出现 blue 的概率是多少。</p>
+<p>难点在于 <strong>high dimension（高维）</strong>：一句话后面可接的词非常多，每种可能算一维，这就是高维问题。高维空间里估计东西需要海量数据，而且直觉会失效。<strong>打个比方：</strong> 讲者老师举过的「酒鬼随机游走」——一维空间里喝醉的人随机左右走，一定能回到家；二维里上下左右随机走，也一定能回到；但到三维，就不一定了，回家概率不再是 1。维度升高会改变问题的性质。</p>
+<p>所以早期 NLP 把问题一步步简化：</p>
+<ul>
+<li><strong>Bag of words</strong>：不考虑条件概率，把每个词当独立出现，只数词频。代价是 “dog bites man” 和 “man bites dog” 结果完全一样——词与词之间的语序关系被忽略了</li>
+<li><strong>N-gram</strong>：不完全忽略语序，但也不看整句，只看最相邻的前一个（或前几个）词，即马尔可夫假设——把原始条件概率近似成「只看最后一个词和 blue 之间关系」的 2-gram 条件概率</li>
+</ul>
+<p>具体用法就是建一张计数表：数出语料里各种 n-gram 的出现次数，按总次数做 normalization 得到概率。比如 P(i want)&#x3D;0.33 很大，P(i to)&#x3D;0 即没有这种搭配，P(i eat) 出现了但概率较小。有了表，实际用的时候直接<strong>查表</strong>——这和 DeepSeek Engram 的思想非常像，区别只在于 Engram 的表里存的不是简单的 probability 而是 vector，好处是把 n-gram 映射进了语义空间（word2vec 的思想）。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：N-gram 用马尔可夫假设把高维条件概率问题变得可解，产物天然就是一张「建表 + 查表」的概率表——这是 Engram 基因的另一半。</p>
+</blockquote>
+<hr>
+<h2 id="8-N-Grammer-把-N-gram-塞回-Transformer"><a href="#8-N-Grammer-把-N-gram-塞回-Transformer" class="headerlink" title="8. N-Grammer 把 N-gram 塞回 Transformer"></a>8. N-Grammer 把 N-gram 塞回 Transformer</h2><p>Transformer 类大模型提出后，N-gram 销声匿迹了一段时间，直到 2022 年 Google 发表 <strong>N-Grammer</strong>：用 latent 的 n-gram 增强当前的 Transformer。动机和 Engram 如出一辙：想更好地 scale up 模型，于是把 n-gram representation 整合进模型，同时借用 Memory 支线的方法让整个过程是 sparse operation，embedding lookup 的开销特别小。本质上这是一个用 n-gram 方式 augment 的 memory augmented model。</p>
+<p>以 bigram（两个 token）为例，整体流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">token → embedding lookup → vector quantization 得到 codebook id → 相邻 id 组合成 bigram id → hash 查表取 bigram embedding → 与 unigram embedding concatenate 输出</span><br></pre></td></tr></table></figure>
+
+<p>第一道坎是<strong>词表爆炸</strong>：unigram 词表大小是 V 的话，bigram 词表就是 V²。原始词表 32000，bigram 就是约 10 亿（billion 级），没法做。作者的解法是<strong>codebook 降维</strong>：对 token embedding 做 k-means clustering，聚成 4096 个类，每个 cluster 就是 codebook 里的一个 vector——直观上就是把语义相似的 token 聚到一起用一个 id 表示。词表从 32000 压到 4096 后，bigram 词表变成 4096²≈1600 万（16 million），量级可以接受了。组合方式也简单：把相邻两个 token 离散化后的 codebook id 拼在一起，就是一个新的 bigram id。</p>
+<p>第二道坎是<strong>大表查询慢</strong>：1600 万行的 embedding 表，逐行找太慢。解法是 <strong>hash</strong>：hash 查询的算法复杂度是 O(1)，具体 hash function 就是对随机质数取模，非常常规。最后把查到的 bigram embedding 和最初的 unigram embedding <strong>concatenate</strong> 起来，输出既含原始 unigram 信息也含 bigram 信息。值得强调：这里的 bigram embedding 是 <strong>trainable</strong> 的——这一点和 DeepSeek Engram 完全一样。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：N-Grammer &#x3D; codebook 聚类降维解决 n-gram 词表爆炸 + hash 实现 O(1) 查大表 + 与 unigram embedding 拼接；这两板斧 Engram 全都接了过去。</p>
+</blockquote>
+<hr>
+<h2 id="9-方法论插曲：化简为繁与化繁为简"><a href="#9-方法论插曲：化简为繁与化繁为简" class="headerlink" title="9. 方法论插曲：化简为繁与化繁为简"></a>9. 方法论插曲：化简为繁与化繁为简</h2><p>讲者在这里做了一个思想实验，回应「科研思路从哪来」：假设有时光机回到 2022 年 N-Grammer 刚发表时，我们能不能自然想到 Engram 的想法？前提是两条：第一，对相关领域的 background 要非常熟——不必知道每篇论文的细节，但每个 idea 以及 idea 之间的关系要熟到成为大脑里的 memory，遇到相关问题立刻激活对应的知识图；第二，批判地读论文——看完除了拍手称好或大骂垃圾，还要想它能不能改进。改进的基本思路有两个方向：</p>
+<ul>
+<li><strong>化简为繁</strong>：把做得太简单的工作合理加复杂。论文图里只展示 bigram，那很自然地想：能不能推广到 trigram，把 bigram 和 trigram 结合起来？肯定有 information gain，gain 多少做实验验证。做法也简单——它最后一步是把 unigram 和 bigram 的 embedding concatenate，那把同样的过程对 trigram 重复一遍、再一起 concatenate 就好</li>
+<li><strong>化繁为简</strong>：把复杂部件换成更简单的。codebook 还要做 k-means，有点复杂——它本质就是降维，而 tokenizer 里不同大小写、前面有无空格都被算成独立 token，纯属浪费，能不能用规则方法直接降维、去掉 codebook？查表能不能试更高效的 hash function？最后那个 naive 的 concatenate 组合，见到这种原始 combine 就很容易联想加一个 <strong>gating</strong>——熟悉 RNN 系列的话，RNN 到 LSTM 就是加了 gating；而 Memory 支线里 gating 已经有人提出了，直接拿来</li>
+</ul>
+<p>讲者点破：上面这些「顺手想到」的改进，<strong>全部就是 DeepSeek Engram 论文里实际做的改进</strong>。他还引用最近一个播客里对 OpenAI 研究员的采访：research idea is cheap——在领域内有点经验，好想法大家都能想到；OpenAI 做得好是因为迭代速度快。通俗地说，现在做科研拼的不是想法，拼的是手速：能不能很快实现出来、写成论文发表。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：化简为繁（bigram→trigram）+ 化繁为简（codebook→规则降维、naive combine→gating）+ 文献熟稔，Engram 的创新点可以一步步从 N-Grammer 推导出来；想法廉价，执行力才贵。</p>
+</blockquote>
+<hr>
+<h2 id="10-f-gram-与更大的-Embedding-层"><a href="#10-f-gram-与更大的-Embedding-层" class="headerlink" title="10. f-gram 与更大的 Embedding 层"></a>10. f-gram 与更大的 Embedding 层</h2><p>Google 2025 年的文章继续沿用 n-gram 思想，主题是 scaling up embedding layer。做法：给定 input text，产生 unigram token 后，找出对应的各种 n-gram（unigram、bigram、trigram 都包括），但只统计其中<strong>经常出现的</strong>那些，称为 <strong>f-gram</strong>，把 f-gram 挑出来；然后经过一个 embedding transformer，得到融合后的 embedding，再送进标准 Transformer。宏观上看，这相当于把一个 memory layer（或者说新的 embedding layer）插进了原始模型。</p>
+<p>这篇论文有个值得注意的点：embedding table 是可以 <strong>pre-computed 并且在推理时 offload</strong> 的。所以 DeepSeek Engram 论文里提到他们的方法可以 offload 到 CPU memory，并不是什么新鲜想法——这里早就提过了。除了 f-gram 之外，其它想法与前面的工作非常类似，讲者不再展开。</p>
+<p>至此两条支线交汇：Memory 支线虽然没怎么提 n-gram，但 n-gram 支线的工作大多借用了 Memory 支线里巨大 embedding table、lookup 机制这些思想。背景铺垫完成，Engram 论文本身反而简单了。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：f-gram &#x3D; 只把高频 n-gram 放进表里；embedding 表可预计算、可 offload——这两点一个指向 Engram 的工程形态，一个指向讲者后文提出的改进方向。</p>
+</blockquote>
+<hr>
+<h2 id="11-Engram-架构：用查表实现条件记忆"><a href="#11-Engram-架构：用查表实现条件记忆" class="headerlink" title="11. Engram 架构：用查表实现条件记忆"></a>11. Engram 架构：用查表实现条件记忆</h2><p>回到正题。Engram 论文的 motivation：给 Transformer 这样的模型建立一个 <strong>conditional memory（条件记忆）</strong>，用 n-gram embedding 实现，并使用各种 lookup 机制让查找在 O(1) 复杂度内完成。这里有个重要的概念区分：现在的大语言模型其实在做两件事——<strong>Reasoning</strong> 和 <strong>Knowledge Retrieval</strong>。而现有架构里知识检索仍要靠计算（simulating retrieval through computation），就像不背九九乘法表的人连简单乘法都要现推。</p>
+<p>架构图一看就能和前面的 Memory 工作联系起来：这就是一个 memory layer，只是插的位置不同——Google 是把 embedding layer 插在模型前端，DeepSeek 放在这个位置，也可以理解为 Google 那个 embedding layer 的变种。Engram layer 做的事就是 n-gram 查表，用了 <strong>2-gram 和 3-gram 的结合</strong>（讲者认为把二者合到一起是这篇论文相对新颖的点）：给定输入，既查它对应的 2-gram 也查 3-gram，全部用 hash function 查，速度约 O(1)；查到的 embedding 直接 concatenate，然后进入 gating。</p>
+<p>gating 部分是一个类似 attention 的结构：查出来的 embedding 经过两个 linear projection，一个的输出当 <strong>value</strong>，另一个当 <strong>key</strong>，原始输入当 <strong>query</strong>；scaled dot product 算出一个 <strong>alpha</strong>，就是门控值；alpha 和 value 相乘，控制多少 n-gram 信息进入输出——alpha 越大，进入的信息越多。最后还加了一个 convolution，讲者认为起 smoothing 或 fusion 作用，但作者自己的 ablation study 也说了这个 convolution 有没有影响不大，不是关键。为避免 hash 常见的 <strong>collision</strong>，用了多个不同的 hash function——这是 hash 的常用做法。整套设计正是 sparsity 思想的又一次落地：查表引入大量参数，计算量却很小。</p>
+<p>训练与推理的形态不同：training 时巨大的 embedding table 在不同 GPU 之间 share；inference 时可以 <strong>offload 到 CPU memory</strong>。DeepSeek 还由此提出 <strong>memory hierarchy（记忆层级）</strong> 分层机制：常见的 n-gram 放比较快的内存，不常见的放比较慢的内存。</p>
+<p>和前序工作对照着看：n-gram lookup + gating 把 local dependencies（固定搭配）直接提取出来，网络不再需要对这些固定搭配做 key-value 式的计算；还记得概念深度那篇论文说复杂观念要到很深的层才能学会吗——这种方式恰好避免了那个问题。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：Engram &#x3D; 2-gram&#x2F;3-gram 多头 hash 查表 + attention 式 gating 控制信息量；把知识检索从逐层计算变成 O(1) 查表，训练时跨 GPU 共享大表、推理时可 offload 到 CPU 并按冷热分层。</p>
+</blockquote>
+<hr>
+<h2 id="12-工程细节：tokenizer-压缩与多头-hash"><a href="#12-工程细节：tokenizer-压缩与多头-hash" class="headerlink" title="12. 工程细节：tokenizer 压缩与多头 hash"></a>12. 工程细节：tokenizer 压缩与多头 hash</h2><p>第一个细节是 <strong>tokenizer compression（词表压缩）</strong>：原始 tokenizer 会把不同大小写、不同拼写形态的 token 当成不同 token；DeepSeek 把它们统一成一个——各种各样的 a 都归成 a，各种各样的 o 都归成 o，从而压缩 tokenizer。对比 N-Grammer 用 codebook（k-means 聚类）做压缩，DeepSeek 用了更简单的规则方法，但目的完全一样：让 vocabulary size 更小，后面算 n-gram 时相对容易——这正是第 9 节方法论里「化繁为简」的实例。</p>
+<p>第二个细节是查表：DeepSeek 沿用前人思想做 hash，为避免 collision 用了 <strong>multi-head 的 hash n-gram</strong>，且每一路的 hash 方式就是非常简单的<strong>异或</strong>。和 PKM 的 product key 切分查询不同，这里直接对离散的 n-gram 做 hash 定位，更简单也更快。</p>
+<p>第三个细节是 gating 的可视化证据：论文用热力图展示 gating 里的 alpha，红色越深表示 alpha 越大（看的时候要把前面的 token 和后面一系列 n-gram 连起来看）。结果是 gating 确实学出了大量固定搭配：英文里的 Diana 与 the princess of Wales；中文里的「四大」与「发明」、「造纸」与「术」、「指南」与「针」、「印刷」与「术」、人名「仲景」与「张」。有了 n-gram lookup 和 gating，网络就不需要再对这些固定搭配做前面 key-value memory 里那种计算了。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：三个工程动作服务于同一个目标——表更小（tokenizer 规则压缩替代 codebook）、查得快且无冲突（multi-head hash 异或）、用得稳（gating 学出固定搭配、过滤检索信息）。</p>
+</blockquote>
+<hr>
+<h2 id="13-实验结果：U-型分配与消融"><a href="#13-实验结果：U-型分配与消融" class="headerlink" title="13. 实验结果：U 型分配与消融"></a>13. 实验结果：U 型分配与消融</h2><p>先看 <strong>MoE 与 Engram 的算力分配</strong>。同样 compute budget 下，两者的比例呈现一条 <strong>U-shape</strong> 曲线：横坐标是 allocation 百分比，纵坐标是 validation loss（越低越好）。右端是没有 Engram layer 的纯 MoE；左端 MoE 占 40%、60% 时性能反而差；最好的区间在 MoE 占七八成、Engram 占两三成左右。这背后仍是不可能三角的变体：算力固定时，MoE 和 Engram 抢的是同一份 sparsity 预算。作者的说法是 Engram 是 MoE 的 <strong>complement（补充）</strong>——也有一些工作提到 memory network 和 MoE 有等价之处，把 Engram 看成 memory network 的变种的话，它就是 MoE 的某种特殊形式；两者都提供 sparsity，所以存在一个分配的 sweet spot。讲者坦言对 U-shape 背后的深层原因想得不是很清楚，欢迎读者留言讨论。</p>
+<p><strong>Scaling law 实验</strong>：把 Engram 的 embedding matrix 不断做大（参数达到 10 的 7 次方量级），模型性能不断提高。这类实验在 memory network 等前序工作里很多人做过——scale up external table 能有效提升 Transformer 性能，同时不引入更多 compute。</p>
+<p><strong>模型对比</strong>：dense model、MoE model、Engram model 在不同任务上比，MoE 好于 dense，Engram 基本上在所有任务上超越 MoE；把 Engram 从 27B 做到 40B，性能还有进一步提高。</p>
+<p><strong>Ablation study</strong>：以带 Engram 的完整版为 100% 基准，把 Engram 模块整个去掉，看各任务性能下降多少。最右边需要 <strong>factual knowledge</strong> 的任务下降最多；其次是算法、数学类的 reasoning 任务，下降也非常多；而需要较多阅读理解、或只靠常识推理的任务下降不明显。这说明 Engram 对知识的存储和提取类任务非常关键——这和知识神经元的观察相呼应：事实性知识本来就适合定位化存储，Engram 给了它一个更直接的存放处。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：MoE 管条件计算、Engram 管条件记忆，固定算力下约「MoE 七八成 + Engram 两三成」最优；scaling 大表持续涨点，消融证明 Engram 贡献最大的是事实性知识。</p>
+</blockquote>
+<hr>
+<h2 id="14-总结与展望"><a href="#14-总结与展望" class="headerlink" title="14. 总结与展望"></a>14. 总结与展望</h2><p>讲者的整体判断：这篇论文理解起来不难，前提是你熟悉领域内两条支线的相关工作——memory network &#x2F; memory layer 一类，和 n-gram 一类。Engram 基本就是前人工作的集合：external memory 查表、offload 到 CPU memory 都是前人提出过的；稍微不一样的点是把 2-gram 和 3-gram 合到了一起。他不认同部分自媒体「惊天地泣鬼神、新 Transformer 架构」的说法，但也不贬低这篇论文——科研本来就是循序渐进，每篇论文都是对前人工作一点点小的修改，累积多了形成质变。</p>
+<p>这篇工作还能怎么改进？讲者给了几个方向：</p>
+<ul>
+<li><strong>表还是太大</strong>：Engram embedding 虽然能 offload 到 CPU memory，但考虑 3-gram 之后仍是一张特别大的表——可以结合前面的 f-gram 思想，只把高频出现的 n-gram 提取进表，让表更小；查表虽快，存储本身也要资源</li>
+<li><strong>压缩表</strong>：利用 low rank 或 sparsity 性质压缩，比如借鉴 codebook——语义空间内相似的 engram 聚合在一起表征，减少表格整体维度</li>
+<li><strong>可编辑的 memory</strong>：有了外部 embedding 表格，就很容易通过各种方法找到对应的概念，直接修改、添加或删除它的 memory，不用重新训练 Transformer——这是领域内很大的一块研究方向</li>
+<li><strong>更宏观的问题</strong>：大家现在仍沿着 Scaling Law 的思路 scale up Transformer 的各个部分；Engram 本质是加了更多可 lookup 的参数、计算量却不大。在数据一定、算力很难再增长的情况下，还有没有其它巧妙改进架构使其更容易 scale up 的方式——这是下一个研究的关键</li>
+</ul>
+<blockquote>
+<p><strong>记住这个就够了</strong>：Engram 是两条支线的集大成而非横空出世；它的下一步是让表更小（f-gram）、可压缩（low rank&#x2F;codebook）、可编辑（免重训更新记忆），以及探索 scale up Transformer 的新路径。</p>
+</blockquote>
+<h2 id="本讲知识地图"><a href="#本讲知识地图" class="headerlink" title="本讲知识地图"></a>本讲知识地图</h2><pre>
+<code class="mermaid">
+
+graph TD
+  R((Engram 论文))
+  subgraph 动机与主线
+    BT[不可能三角] --&gt;|催生| SP[Sparsity]
+    SP --&gt;|解耦参数与算力| MOE[MoE]
+    SP --&gt;|落地为查表记忆| EG[Engram]
+  end
+  subgraph Memory支线
+    KVM[Key-Value Memory] --&gt;|细化定位| KN[知识神经元]
+    KVM --&gt;|稀疏化| PKM[Product Key Memory]
+    PKM --&gt;|加过滤| GT[门控机制]
+    KVM --&gt;|逐层计算太深| CD[概念深度]
+    WT[外部记忆] --&gt;|参数表化总结| KVM
+  end
+  subgraph Ngram支线
+    NG[N-gram] --&gt;|组合爆炸| CB[Codebook]
+    CB --&gt;|加速查表| HS[Hash 查表]
+    NG --&gt;|只留高频| FG[f-gram]
+  end
+  subgraph 架构与工程
+    TK[tokenizer 压缩] --&gt;|缩小词表| HS
+    HS --&gt;|实现查表| EG
+    GT --&gt;|控制信息量| EG
+    EG --&gt;|冷热分层| MH[记忆层级]
+  end
+  R --&gt; EG
+  MOE -.-&gt;|互补且竞争算力| EG
+  CD --&gt;|提供动机| EG
+</code>
+</pre>
+
+<h2 id="本讲小结"><a href="#本讲小结" class="headerlink" title="本讲小结"></a>本讲小结</h2><table>
+<thead>
+<tr>
+<th>机制&#x2F;概念</th>
+<th>解决什么问题</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sparsity</td>
+<td>不可能三角限制 Scaling Law 继续 scale up</td>
+<td>只激活&#x2F;查询一部分参数，让参数量和计算量解耦</td>
+</tr>
+<tr>
+<td>Key-Value Memory</td>
+<td>不知道 Transformer 把知识存在哪</td>
+<td>FFN 一层参数是 key、二层参数是 value，内积匹配后加权提取</td>
+</tr>
+<tr>
+<td>PKM</td>
+<td>key 太多导致查询慢、dense memory 计算贵</td>
+<td>子 key 切分组合查表，top-k 稀疏取值</td>
+</tr>
+<tr>
+<td>Codebook + Hash 查表</td>
+<td>n-gram 词表爆炸（V²）与大表查询慢</td>
+<td>k-means 聚类降维词表，hash 实现 O(1) 定位</td>
+</tr>
+<tr>
+<td>门控机制</td>
+<td>检索出的记忆信息可能有噪音</td>
+<td>用 query-key 相似度算 alpha，控制多少信息进入输出</td>
+</tr>
+<tr>
+<td>Engram</td>
+<td>知识检索靠逐层计算太低效</td>
+<td>2-gram&#x2F;3-gram 多头 hash 查表 + gating 的条件记忆层</td>
+</tr>
+</tbody></table>
+<p><strong>学完能说的 3 句话：</strong></p>
+<ol>
+<li>DeepSeek 全家的主线是用 Sparsity 打破 Performance&#x2F;Compute&#x2F;Size 的不可能三角，Engram 是 MLP 一侧的最新落子。</li>
+<li>Engram 继承了两条支线：Memory 支线的「FFN 即 key-value memory → 稀疏化 → 巨大外部表 + 便宜查表 + gating」，和 N-gram 支线的「马尔可夫近似 → 建表查表 → codebook 降维 + hash 定位」。</li>
+<li>实验上 MoE 与 Engram 按约七八比二三分配算力最优、互为补充，消融显示 Engram 贡献最大的是事实性知识任务。</li>
+</ol>
+<h2 id="概念卡片"><a href="#概念卡片" class="headerlink" title="概念卡片"></a>概念卡片</h2><h3 id="不可能三角"><a href="#不可能三角" class="headerlink" title="不可能三角"></a>不可能三角</h3><ul>
+<li>定义：Dense 模型中 Performance、Compute Cost（FLOPs）、Model Size 三者难以同时优化的困境</li>
+<li>出现：第 1 节「Engram 想解决什么问题」、第 13 节「实验结果：U 型分配与消融」</li>
+<li>依赖：</li>
+<li>易混：</li>
+</ul>
+<h3 id="Sparsity"><a href="#Sparsity" class="headerlink" title="Sparsity"></a>Sparsity</h3><ul>
+<li>定义：一次只使用一部分参数或计算的通用思路，可让 Model Size 与 Compute Cost 解耦</li>
+<li>出现：第 1 节「Engram 想解决什么问题」、第 11 节「Engram 架构：用查表实现条件记忆」</li>
+<li>依赖：不可能三角</li>
+<li>易混：MoE——MoE 只是 sparsity 的一种实现（条件计算），sparsity 还包括稀疏 attention、查表式记忆等</li>
+</ul>
+<h3 id="Engram"><a href="#Engram" class="headerlink" title="Engram"></a>Engram</h3><ul>
+<li>定义：双关 N-gram 发音与神经科学「记忆细胞」的术语，指 DeepSeek 用 n-gram embedding + hash 查表实现的条件记忆模块</li>
+<li>出现：第 2 节「九九乘法表类比」、第 3 节「Engram 一词的由来」、第 11 节「Engram 架构：用查表实现条件记忆」</li>
+<li>依赖：Hash 查表、门控机制</li>
+<li>易混：MoE——Engram 管条件记忆（静态知识查表），MoE 管条件计算，二者互补</li>
+</ul>
+<h3 id="MoE"><a href="#MoE" class="headerlink" title="MoE"></a>MoE</h3><ul>
+<li>定义：混合专家架构，把大 MLP 拆成多个小 expert、推理只激活一部分，从而解耦参数量与计算量</li>
+<li>出现：第 1 节「Engram 想解决什么问题」、第 13 节「实验结果：U 型分配与消融」</li>
+<li>依赖：Sparsity</li>
+<li>易混：Engram——两者都提供 sparsity，固定算力下会竞争分配比例，但定位互补</li>
+</ul>
+<h3 id="Key-Value-Memory"><a href="#Key-Value-Memory" class="headerlink" title="Key-Value Memory"></a>Key-Value Memory</h3><ul>
+<li>定义：把 FFN 第一层参数视为 key、第二层参数视为 value，输入做内积相似度匹配后加权提取值的记忆机制</li>
+<li>出现：第 4 节「FFN 层就是 Key-Value Memory」、第 5 节「PKM 与稀疏 Memory Layer」</li>
+<li>依赖：</li>
+<li>易混：Hash 查表——key-value memory 靠矩阵计算逐层提取，hash 查表是 O(1) 直接定位</li>
+</ul>
+<h3 id="知识神经元"><a href="#知识神经元" class="headerlink" title="知识神经元"></a>知识神经元</h3><ul>
+<li>定义：FFN 层中与特定事实知识对应、会被特定激活的神经元（如问 Ireland 首都时激活并回答 Dublin）</li>
+<li>出现：第 4 节「FFN 层就是 Key-Value Memory」、第 13 节「实验结果：U 型分配与消融」</li>
+<li>依赖：Key-Value Memory</li>
+<li>易混：</li>
+</ul>
+<h3 id="概念深度"><a href="#概念深度" class="headerlink" title="概念深度"></a>概念深度</h3><ul>
+<li>定义：简单任务在浅层即可形成概念、复杂任务需到深层才形成、弱模型可能到最后一层仍未形成的现象</li>
+<li>出现：第 4 节「FFN 层就是 Key-Value Memory」、第 11 节「Engram 架构：用查表实现条件记忆」</li>
+<li>依赖：Key-Value Memory</li>
+<li>易混：</li>
+</ul>
+<h3 id="Product-Key-Memory"><a href="#Product-Key-Memory" class="headerlink" title="Product Key Memory"></a>Product Key Memory</h3><ul>
+<li>定义：Facebook 2019 提出的稀疏 memory layer，把 key 向量切分成子 key 分别查询再组合，用少量子 key 表达巨大 key 空间</li>
+<li>出现：第 5 节「PKM 与稀疏 Memory Layer」、第 12 节「工程细节：tokenizer 压缩与多头 hash」</li>
+<li>依赖：Key-Value Memory</li>
+<li>易混：Hash 查表——PKM 切分向量 key 做近邻查询，Engram 直接对离散 n-gram 做 hash 定位</li>
+</ul>
+<h3 id="门控机制"><a href="#门控机制" class="headerlink" title="门控机制"></a>门控机制</h3><ul>
+<li>定义：用 query 与检索结果算出门控值 alpha，控制检索信息有多少进入输出的过滤阀门</li>
+<li>出现：第 6 节「门控、外部记忆与 Memory 支线总结」、第 9 节「方法论插曲：化简为繁与化繁为简」、第 11 节「Engram 架构：用查表实现条件记忆」</li>
+<li>依赖：</li>
+<li>易混：MoE——路由是离散地选专家，门控是连续地过滤已检索的信息</li>
+</ul>
+<h3 id="外部记忆"><a href="#外部记忆" class="headerlink" title="外部记忆"></a>外部记忆</h3><ul>
+<li>定义：以巨大 embedding 表或外部文档库形式存在于模型主干之外、按需检索且可预计算与 offload 的记忆</li>
+<li>出现：第 6 节「门控、外部记忆与 Memory 支线总结」、第 10 节「f-gram 与更大的 Embedding 层」</li>
+<li>依赖：Hash 查表</li>
+<li>易混：Key-Value Memory——后者把知识存在 FFN 参数里靠计算提取，前者独立于主干、查表即得</li>
+</ul>
+<h3 id="N-gram"><a href="#N-gram" class="headerlink" title="N-gram"></a>N-gram</h3><ul>
+<li>定义：只看相邻前 N 个词来近似条件概率的统计语言建模方法，依赖马尔可夫假设</li>
+<li>出现：第 7 节「从条件概率到 N-gram 查表」、第 8 节「N-Grammer 把 N-gram 塞回 Transformer」、第 11 节「Engram 架构：用查表实现条件记忆」</li>
+<li>依赖：</li>
+<li>易混：f-gram——N-gram 是局部词组合的通用概念，f-gram 只把其中高频者放进表里</li>
+</ul>
+<h3 id="Codebook"><a href="#Codebook" class="headerlink" title="Codebook"></a>Codebook</h3><ul>
+<li>定义：对 token embedding 做 k-means 聚类得到的小向量集合，用于压缩词表、控制 n-gram 组合爆炸</li>
+<li>出现：第 8 节「N-Grammer 把 N-gram 塞回 Transformer」、第 12 节「工程细节：tokenizer 压缩与多头 hash」</li>
+<li>依赖：N-gram</li>
+<li>易混：tokenizer 压缩——目的同为降词表，codebook 靠聚类训练，tokenizer 压缩靠大小写与拼写归一规则、更简单</li>
+</ul>
+<h3 id="Hash-查表"><a href="#Hash-查表" class="headerlink" title="Hash 查表"></a>Hash 查表</h3><ul>
+<li>定义：对 key 做 hash（如随机质数取模、异或）直接计算存储位置的查表方式，复杂度约 O(1)</li>
+<li>出现：第 8 节「N-Grammer 把 N-gram 塞回 Transformer」、第 11 节「Engram 架构：用查表实现条件记忆」、第 12 节「工程细节：tokenizer 压缩与多头 hash」</li>
+<li>依赖：N-gram</li>
+<li>易混：Product Key Memory——同为高效查表，PKM 面向连续向量 key，hash 面向离散 id</li>
+</ul>
+<h3 id="f-gram"><a href="#f-gram" class="headerlink" title="f-gram"></a>f-gram</h3><ul>
+<li>定义：从语料中统计出的高频 n-gram（含 unigram、bigram、trigram 混合），只将其放入 embedding 表以控制规模</li>
+<li>出现：第 10 节「f-gram 与更大的 Embedding 层」、第 14 节「总结与展望」</li>
+<li>依赖：N-gram</li>
+<li>易混：N-gram——f-gram 是按出现频率筛选后的子集</li>
+</ul>
+<h3 id="tokenizer-压缩"><a href="#tokenizer-压缩" class="headerlink" title="tokenizer 压缩"></a>tokenizer 压缩</h3><ul>
+<li>定义：把大小写、拼写、空格变体产生的不同 token 统一归并，以缩小词表的规则化操作</li>
+<li>出现：第 9 节「方法论插曲：化简为繁与化繁为简」、第 12 节「工程细节：tokenizer 压缩与多头 hash」</li>
+<li>依赖：</li>
+<li>易混：Codebook——tokenizer 压缩用确定性规则，codebook 用 k-means 聚类</li>
+</ul>
+<h3 id="记忆层级"><a href="#记忆层级" class="headerlink" title="记忆层级"></a>记忆层级</h3><ul>
+<li>定义：常见 n-gram 放快速内存、不常见 n-gram 放慢速内存（如 CPU memory）的分层存储机制</li>
+<li>出现：第 11 节「Engram 架构：用查表实现条件记忆」、第 14 节「总结与展望」</li>
+<li>依赖：外部记忆</li>
+<li>易混：</li>
+</ul>
+<h2 id="自测题（面试速答）"><a href="#自测题（面试速答）" class="headerlink" title="自测题（面试速答）"></a>自测题（面试速答）</h2><ol>
+<li>Dense 模型面临的不可能三角是什么？引入 sparsity 为什么能打破它？（对应：不可能三角）</li>
+</ol>
+<p><strong>答案：</strong> 不可能三角指 Performance、Compute Cost、Model Size 三者难以同时优化，想提性能就得加参数或加计算。Sparsity 把其中 Model Size 与 Compute Cost 这条边切断了：参数可以很多，但每次前向只激活或只查询其中一小部分，计算量不随参数量增长。MoE 是典型例子——expert 很多但只激活 top-k；Engram 也一样，embedding 表可以做到上百 B 参数，用的时候只是 O(1) 查表，几乎不加 FLOPs，于是 Scaling Law 可以继续往上 scale。</p>
+<ol start="2">
+<li>为什么说 Transformer 的 FFN 层本质是 key-value memory？key 和 value 分别对应什么？（对应：Key-Value Memory）</li>
+</ol>
+<p><strong>答案：</strong> 因为 FFN 的计算过程可以解释为一次「按键取值」：第一层参数是 key，第二层参数是 value。输入与第一层参数做内积，本质是相似度计算，在参数记住的各种 pattern 里找出与输入相近的，得到权重；再用权重对第二层的 value 做加权平均，把知识提取出来。比如输入 “Stay with you for…” 时，”for a” 这类 pattern 权重变大，对应的 value “while” 就在输出里占主导。图书馆的类比是：一层参数是书的 index，二层参数是书的内容。</p>
+<ol start="3">
+<li>PKM 的 product key 设计解决了什么问题？它是怎么工作的？（对应：Product Key Memory）</li>
+</ol>
+<p><strong>答案：</strong> 它解决的是 key 空间巨大导致查询太慢的问题。做法是把原始 key 向量（如 128 维）从中切成两半，作为两套子 key；query 也同样切开，前半查第一套、后半查第二套，最后组合结果。每套子 key 只有少量可能，但两套的排列组合（外积）能表达巨大的 key 空间，因此存储和比对的 key 数目大幅减少、查询显著加速。PKM 还引入了独立 memory layer、sparse top-k 取值和 lookup 机制三大贡献，Engram 继承了查表思想，只是把 product key 换成了 hash。</p>
+<ol start="4">
+<li>N-Grammer 生成 bigram 时词表会从 V 爆炸到 V²，codebook 是怎么解决的？（对应：Codebook）</li>
+</ol>
+<p><strong>答案：</strong> 用 k-means 聚类对词表降维。原始 unigram 词表 32000 的话，bigram 词表是 32000²≈10 亿，不可行；N-Grammer 把 token embedding 聚成 4096 个 codebook vector，语义相似的 token 共用一个 id，词表压到 4096，bigram 词表就变成 4096²≈1600 万，可以接受。之后把相邻 token 的 codebook id 组合成 bigram id，再用对随机质数取模的 hash 做 O(1) 查表。DeepSeek 的 tokenizer 压缩目标相同但手段更简单，直接按大小写和拼写规则归并。</p>
+<ol start="5">
+<li>Engram 架构中 gating 起什么作用？有什么证据说明它学到了东西？（对应：门控机制）</li>
+</ol>
+<p><strong>答案：</strong> gating 控制检索到的 n-gram 信息有多少进入输出：查出的 embedding 经两个 linear projection 得到 key 和 value，原始输入当 query，scaled dot product 算出 alpha，alpha 乘 value——alpha 越大信息进入越多，相当于给可能带噪音的检索结果加了过滤阀门。证据是论文的 alpha 热力图：红色高亮处正好是固定搭配，如 Diana 与 the princess of Wales、「四大」与「发明」、「造纸」与「术」、「仲景」与「张」。这一机制由 Meta 在 memory layer 上首先引入，Engram 直接沿用，连 activation function 都一样。</p>
+<ol start="6">
+<li>Engram 的知识检索为什么比 FFN 的计算方式快？它做了哪些工程保证？（对应：Hash 查表）</li>
+</ol>
+<p><strong>答案：</strong> 因为它把「simulating retrieval through computation」换成了直接查表：FFN 方式每层都要做内积相似度计算和加权平均，而 Engram 对 2-gram&#x2F;3-gram 做 hash，复杂度约 O(1)，几乎不耗 FLOPs。工程上有三个保证：tokenizer 压缩用规则归并大小写变体缩小词表；multi-head hash n-gram 用多个不同 hash function（每路是简单异或）避免 collision；巨大的 embedding 表训练时跨 GPU 共享、推理时 offload 到 CPU memory，再按记忆层级把常见 n-gram 放快内存、不常见的放慢内存。</p>
+<ol start="7">
+<li>消融实验里去掉 Engram 后哪类任务性能下降最多？这说明了什么？（对应：知识神经元）</li>
+</ol>
+<p><strong>答案：</strong> 需要 factual knowledge 的任务下降最多，其次是算法与数学类 reasoning 任务，阅读理解和常识推理类任务下降不明显。这说明 Engram 的主要贡献在知识的存储与提取：固定事实原本要靠 FFN 里知识神经元式的逐层计算来「回想」，现在由 n-gram 查表直接给出。这也与 MoE&#x2F;Engram 的 U 型分配实验一致——Engram 作为 MoE 的补充专管条件记忆，事实类任务自然最依赖它。</p>
+<hr>
+<h2 id="视频时间索引"><a href="#视频时间索引" class="headerlink" title="视频时间索引"></a>视频时间索引</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=28">00:31</a> 1. Engram 想解决什么问题</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=321">05:25</a> 2. 九九乘法表类比</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=432">07:17</a> 3. Engram 一词的由来</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=606">10:10</a> 4. FFN 层就是 Key-Value Memory</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1235">20:39</a> 5. PKM 与稀疏 Memory Layer</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1550">25:54</a> 6. 门控、外部记忆与 Memory 支线总结</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1890">31:33</a> 7. 从条件概率到 N-gram 查表</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">37:02</a> 8. N-Grammer 把 N-gram 塞回 Transformer</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2501">41:45</a> 9. 方法论插曲：化简为繁与化繁为简</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2795">46:39</a> 10. f-gram 与更大的 Embedding 层</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">48:55</a> 11. Engram 架构：用查表实现条件记忆</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3176">52:58</a> 12. 工程细节：tokenizer 压缩与多头 hash</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3335">55:40</a> 13. 实验结果：U 型分配与消融</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3547">59:12</a> 14. 总结与展望</li>
+</ul>
+<hr>
+<h2 id="附录A：概念表（复习勾选）"><a href="#附录A：概念表（复习勾选）" class="headerlink" title="附录A：概念表（复习勾选）"></a>附录A：概念表（复习勾选）</h2><blockquote>
+<p>课程：DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding｜概念 16 个（跨集出现 0 个）｜已掌握 0 &#x2F; 16｜来自 1 篇已完成的笔记｜更新于 2026-11-14T09:02:01+00:00<br>用法：掌握了就把 <code>[ ]</code> 改成 <code>[x]</code>，重新生成时会保留；也可以让 Agent “考考我没掌握的概念”。</p>
+</blockquote>
+<h3 id="第-1-集-·-DeepSeek-Engram-论文串讲：从-Memory-Network-到-N-gram-Embedding"><a href="#第-1-集-·-DeepSeek-Engram-论文串讲：从-Memory-Network-到-N-gram-Embedding" class="headerlink" title="第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding"></a>第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding</h3><ul>
+<li><p><input disabled="" type="checkbox"> 
+<strong>不可能三角</strong></p>
+<ul>
+<li>定义：Dense 模型中 Performance、Compute Cost（FLOPs）、Model Size 三者难以同时优化的困境</li>
+<li>出现：<ul>
+<li>第 1 集 第 1 节「Engram 想解决什么问题」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=28">▶ 00:31</a></li>
+<li>第 1 集 第 13 节「实验结果：U 型分配与消融」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3335">▶ 55:40</a></li>
+</ul>
+</li>
+<li>自测：第 1 集第 1 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>Sparsity</strong></p>
+<ul>
+<li>定义：一次只使用一部分参数或计算的通用思路，可让 Model Size 与 Compute Cost 解耦</li>
+<li>出现：<ul>
+<li>第 1 集 第 1 节「Engram 想解决什么问题」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=28">▶ 00:31</a></li>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+</ul>
+</li>
+<li>依赖：不可能三角｜易混：MoE——MoE 只是 sparsity 的一种实现（条件计算），sparsity 还包括稀疏 attention、查表式记忆等</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>MoE</strong></p>
+<ul>
+<li>定义：混合专家架构，把大 MLP 拆成多个小 expert、推理只激活一部分，从而解耦参数量与计算量</li>
+<li>出现：<ul>
+<li>第 1 集 第 1 节「Engram 想解决什么问题」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=28">▶ 00:31</a></li>
+<li>第 1 集 第 13 节「实验结果：U 型分配与消融」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3335">▶ 55:40</a></li>
+</ul>
+</li>
+<li>依赖：Sparsity｜易混：Engram——两者都提供 sparsity，固定算力下会竞争分配比例，但定位互补</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>Engram</strong></p>
+<ul>
+<li>定义：双关 N-gram 发音与神经科学「记忆细胞」的术语，指 DeepSeek 用 n-gram embedding + hash 查表实现的条件记忆模块</li>
+<li>出现：<ul>
+<li>第 1 集 第 2 节「九九乘法表类比」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=321">▶ 05:25</a></li>
+<li>第 1 集 第 3 节「Engram 一词的由来」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=432">▶ 07:17</a></li>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+</ul>
+</li>
+<li>依赖：Hash 查表、门控机制｜易混：MoE——Engram 管条件记忆（静态知识查表），MoE 管条件计算，二者互补</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>Key-Value Memory</strong></p>
+<ul>
+<li>定义：把 FFN 第一层参数视为 key、第二层参数视为 value，输入做内积相似度匹配后加权提取值的记忆机制</li>
+<li>出现：<ul>
+<li>第 1 集 第 4 节「FFN 层就是 Key-Value Memory」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=606">▶ 10:10</a></li>
+<li>第 1 集 第 5 节「PKM 与稀疏 Memory Layer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1235">▶ 20:39</a></li>
+</ul>
+</li>
+<li>易混：Hash 查表——key-value memory 靠矩阵计算逐层提取，hash 查表是 O(1) 直接定位</li>
+<li>自测：第 1 集第 2 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>知识神经元</strong></p>
+<ul>
+<li>定义：FFN 层中与特定事实知识对应、会被特定激活的神经元（如问 Ireland 首都时激活并回答 Dublin）</li>
+<li>出现：<ul>
+<li>第 1 集 第 4 节「FFN 层就是 Key-Value Memory」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=606">▶ 10:10</a></li>
+<li>第 1 集 第 13 节「实验结果：U 型分配与消融」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3335">▶ 55:40</a></li>
+</ul>
+</li>
+<li>依赖：Key-Value Memory</li>
+<li>自测：第 1 集第 7 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>概念深度</strong></p>
+<ul>
+<li>定义：简单任务在浅层即可形成概念、复杂任务需到深层才形成、弱模型可能到最后一层仍未形成的现象</li>
+<li>出现：<ul>
+<li>第 1 集 第 4 节「FFN 层就是 Key-Value Memory」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=606">▶ 10:10</a></li>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+</ul>
+</li>
+<li>依赖：Key-Value Memory</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>Product Key Memory</strong></p>
+<ul>
+<li>定义：Facebook 2019 提出的稀疏 memory layer，把 key 向量切分成子 key 分别查询再组合，用少量子 key 表达巨大 key 空间</li>
+<li>出现：<ul>
+<li>第 1 集 第 5 节「PKM 与稀疏 Memory Layer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1235">▶ 20:39</a></li>
+<li>第 1 集 第 12 节「工程细节：tokenizer 压缩与多头 hash」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3176">▶ 52:58</a></li>
+</ul>
+</li>
+<li>依赖：Key-Value Memory｜易混：Hash 查表——PKM 切分向量 key 做近邻查询，Engram 直接对离散 n-gram 做 hash 定位</li>
+<li>自测：第 1 集第 3 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>门控机制</strong></p>
+<ul>
+<li>定义：用 query 与检索结果算出门控值 alpha，控制检索信息有多少进入输出的过滤阀门</li>
+<li>出现：<ul>
+<li>第 1 集 第 6 节「门控、外部记忆与 Memory 支线总结」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1550">▶ 25:54</a></li>
+<li>第 1 集 第 9 节「方法论插曲：化简为繁与化繁为简」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2501">▶ 41:45</a></li>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+</ul>
+</li>
+<li>易混：MoE——路由是离散地选专家，门控是连续地过滤已检索的信息</li>
+<li>自测：第 1 集第 5 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>外部记忆</strong></p>
+<ul>
+<li>定义：以巨大 embedding 表或外部文档库形式存在于模型主干之外、按需检索且可预计算与 offload 的记忆</li>
+<li>出现：<ul>
+<li>第 1 集 第 6 节「门控、外部记忆与 Memory 支线总结」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1550">▶ 25:54</a></li>
+<li>第 1 集 第 10 节「f-gram 与更大的 Embedding 层」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2795">▶ 46:39</a></li>
+</ul>
+</li>
+<li>依赖：Hash 查表｜易混：Key-Value Memory——后者把知识存在 FFN 参数里靠计算提取，前者独立于主干、查表即得</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>N-gram</strong></p>
+<ul>
+<li>定义：只看相邻前 N 个词来近似条件概率的统计语言建模方法，依赖马尔可夫假设</li>
+<li>出现：<ul>
+<li>第 1 集 第 7 节「从条件概率到 N-gram 查表」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1890">▶ 31:33</a></li>
+<li>第 1 集 第 8 节「N-Grammer 把 N-gram 塞回 Transformer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 37:02</a></li>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+</ul>
+</li>
+<li>易混：f-gram——N-gram 是局部词组合的通用概念，f-gram 只把其中高频者放进表里</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>Codebook</strong></p>
+<ul>
+<li>定义：对 token embedding 做 k-means 聚类得到的小向量集合，用于压缩词表、控制 n-gram 组合爆炸</li>
+<li>出现：<ul>
+<li>第 1 集 第 8 节「N-Grammer 把 N-gram 塞回 Transformer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 37:02</a></li>
+<li>第 1 集 第 12 节「工程细节：tokenizer 压缩与多头 hash」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3176">▶ 52:58</a></li>
+</ul>
+</li>
+<li>依赖：N-gram｜易混：tokenizer 压缩——目的同为降词表，codebook 靠聚类训练，tokenizer 压缩靠大小写与拼写归一规则、更简单</li>
+<li>自测：第 1 集第 4 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>Hash 查表</strong></p>
+<ul>
+<li>定义：对 key 做 hash（如随机质数取模、异或）直接计算存储位置的查表方式，复杂度约 O(1)</li>
+<li>出现：<ul>
+<li>第 1 集 第 8 节「N-Grammer 把 N-gram 塞回 Transformer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 37:02</a></li>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+<li>第 1 集 第 12 节「工程细节：tokenizer 压缩与多头 hash」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3176">▶ 52:58</a></li>
+</ul>
+</li>
+<li>依赖：N-gram｜易混：Product Key Memory——同为高效查表，PKM 面向连续向量 key，hash 面向离散 id</li>
+<li>自测：第 1 集第 6 题</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>tokenizer 压缩</strong></p>
+<ul>
+<li>定义：把大小写、拼写、空格变体产生的不同 token 统一归并，以缩小词表的规则化操作</li>
+<li>出现：<ul>
+<li>第 1 集 第 9 节「方法论插曲：化简为繁与化繁为简」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2501">▶ 41:45</a></li>
+<li>第 1 集 第 12 节「工程细节：tokenizer 压缩与多头 hash」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3176">▶ 52:58</a></li>
+</ul>
+</li>
+<li>易混：Codebook——tokenizer 压缩用确定性规则，codebook 用 k-means 聚类</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>f-gram</strong></p>
+<ul>
+<li>定义：从语料中统计出的高频 n-gram（含 unigram、bigram、trigram 混合），只将其放入 embedding 表以控制规模</li>
+<li>出现：<ul>
+<li>第 1 集 第 10 节「f-gram 与更大的 Embedding 层」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2795">▶ 46:39</a></li>
+<li>第 1 集 第 14 节「总结与展望」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3547">▶ 59:12</a></li>
+</ul>
+</li>
+<li>依赖：N-gram｜易混：N-gram——f-gram 是按出现频率筛选后的子集</li>
+</ul>
+</li>
+<li><p><input disabled="" type="checkbox"> 
+<strong>记忆层级</strong></p>
+<ul>
+<li>定义：常见 n-gram 放快速内存、不常见 n-gram 放慢速内存（如 CPU memory）的分层存储机制</li>
+<li>出现：<ul>
+<li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
+<li>第 1 集 第 14 节「总结与展望」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=3547">▶ 59:12</a></li>
+</ul>
+</li>
+<li>依赖：外部记忆</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="附录B：课程自测（7-题）"><a href="#附录B：课程自测（7-题）" class="headerlink" title="附录B：课程自测（7 题）"></a>附录B：课程自测（7 题）</h2><blockquote>
+<p>课程：DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding｜共 7 题，来自 1 篇笔记｜没掌握的概念涉及 7 题｜答案不折叠，先遮住答案再自测<br>在 概念表附录 里勾选已掌握的概念，重新生成后这里只把没掌握的放在最前面。</p>
+</blockquote>
+<p>还没有勾选任何概念；在概念表里勾选后，这里会把没掌握的单独列出来。</p>
+<h3 id="全部题目（按集）"><a href="#全部题目（按集）" class="headerlink" title="全部题目（按集）"></a>全部题目（按集）</h3><h3 id="第-1-集-·-DeepSeek-Engram-论文串讲：从-Memory-Network-到-N-gram-Embedding-1"><a href="#第-1-集-·-DeepSeek-Engram-论文串讲：从-Memory-Network-到-N-gram-Embedding-1" class="headerlink" title="第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding"></a>第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding</h3><ol>
+<li>Dense 模型面临的不可能三角是什么？引入 sparsity 为什么能打破它？（对应：不可能三角；第 1 集第 1 题）</li>
+</ol>
+<p><strong>答案：</strong> 不可能三角指 Performance、Compute Cost、Model Size 三者难以同时优化，想提性能就得加参数或加计算。Sparsity 把其中 Model Size 与 Compute Cost 这条边切断了：参数可以很多，但每次前向只激活或只查询其中一小部分，计算量不随参数量增长。MoE 是典型例子——expert 很多但只激活 top-k；Engram 也一样，embedding 表可以做到上百 B 参数，用的时候只是 O(1) 查表，几乎不加 FLOPs，于是 Scaling Law 可以继续往上 scale。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=28">▶ 回看 00:31</a> · 本文正文</p>
+<ol start="2">
+<li>为什么说 Transformer 的 FFN 层本质是 key-value memory？key 和 value 分别对应什么？（对应：Key-Value Memory；第 1 集第 2 题）</li>
+</ol>
+<p><strong>答案：</strong> 因为 FFN 的计算过程可以解释为一次「按键取值」：第一层参数是 key，第二层参数是 value。输入与第一层参数做内积，本质是相似度计算，在参数记住的各种 pattern 里找出与输入相近的，得到权重；再用权重对第二层的 value 做加权平均，把知识提取出来。比如输入 “Stay with you for…” 时，”for a” 这类 pattern 权重变大，对应的 value “while” 就在输出里占主导。图书馆的类比是：一层参数是书的 index，二层参数是书的内容。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=606">▶ 回看 10:10</a> · 本文正文</p>
+<ol start="3">
+<li>PKM 的 product key 设计解决了什么问题？它是怎么工作的？（对应：Product Key Memory；第 1 集第 3 题）</li>
+</ol>
+<p><strong>答案：</strong> 它解决的是 key 空间巨大导致查询太慢的问题。做法是把原始 key 向量（如 128 维）从中切成两半，作为两套子 key；query 也同样切开，前半查第一套、后半查第二套，最后组合结果。每套子 key 只有少量可能，但两套的排列组合（外积）能表达巨大的 key 空间，因此存储和比对的 key 数目大幅减少、查询显著加速。PKM 还引入了独立 memory layer、sparse top-k 取值和 lookup 机制三大贡献，Engram 继承了查表思想，只是把 product key 换成了 hash。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1235">▶ 回看 20:39</a> · 本文正文</p>
+<ol start="4">
+<li>N-Grammer 生成 bigram 时词表会从 V 爆炸到 V²，codebook 是怎么解决的？（对应：Codebook；第 1 集第 4 题）</li>
+</ol>
+<p><strong>答案：</strong> 用 k-means 聚类对词表降维。原始 unigram 词表 32000 的话，bigram 词表是 32000²≈10 亿，不可行；N-Grammer 把 token embedding 聚成 4096 个 codebook vector，语义相似的 token 共用一个 id，词表压到 4096，bigram 词表就变成 4096²≈1600 万，可以接受。之后把相邻 token 的 codebook id 组合成 bigram id，再用对随机质数取模的 hash 做 O(1) 查表。DeepSeek 的 tokenizer 压缩目标相同但手段更简单，直接按大小写和拼写规则归并。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 回看 37:02</a> · 本文正文</p>
+<ol start="5">
+<li>Engram 架构中 gating 起什么作用？有什么证据说明它学到了东西？（对应：门控机制；第 1 集第 5 题）</li>
+</ol>
+<p><strong>答案：</strong> gating 控制检索到的 n-gram 信息有多少进入输出：查出的 embedding 经两个 linear projection 得到 key 和 value，原始输入当 query，scaled dot product 算出 alpha，alpha 乘 value——alpha 越大信息进入越多，相当于给可能带噪音的检索结果加了过滤阀门。证据是论文的 alpha 热力图：红色高亮处正好是固定搭配，如 Diana 与 the princess of Wales、「四大」与「发明」、「造纸」与「术」、「仲景」与「张」。这一机制由 Meta 在 memory layer 上首先引入，Engram 直接沿用，连 activation function 都一样。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1550">▶ 回看 25:54</a> · 本文正文</p>
+<ol start="6">
+<li>Engram 的知识检索为什么比 FFN 的计算方式快？它做了哪些工程保证？（对应：Hash 查表；第 1 集第 6 题）</li>
+</ol>
+<p><strong>答案：</strong> 因为它把「simulating retrieval through computation」换成了直接查表：FFN 方式每层都要做内积相似度计算和加权平均，而 Engram 对 2-gram&#x2F;3-gram 做 hash，复杂度约 O(1)，几乎不耗 FLOPs。工程上有三个保证：tokenizer 压缩用规则归并大小写变体缩小词表；multi-head hash n-gram 用多个不同 hash function（每路是简单异或）避免 collision；巨大的 embedding 表训练时跨 GPU 共享、推理时 offload 到 CPU memory，再按记忆层级把常见 n-gram 放快内存、不常见的放慢内存。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 回看 37:02</a> · 本文正文</p>
+<ol start="7">
+<li>消融实验里去掉 Engram 后哪类任务性能下降最多？这说明了什么？（对应：知识神经元；第 1 集第 7 题）</li>
+</ol>
+<p><strong>答案：</strong> 需要 factual knowledge 的任务下降最多，其次是算法与数学类 reasoning 任务，阅读理解和常识推理类任务下降不明显。这说明 Engram 的主要贡献在知识的存储与提取：固定事实原本要靠 FFN 里知识神经元式的逐层计算来「回想」，现在由 n-gram 查表直接给出。这也与 MoE&#x2F;Engram 的 U 型分配实验一致——Engram 作为 MoE 的补充专管条件记忆，事实类任务自然最依赖它。</p>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=606">▶ 回看 10:10</a> · 本文正文</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DeepSeek/" rel="tag"># DeepSeek</a>
+              <a href="/tags/Engram/" rel="tag"># Engram</a>
+              <a href="/tags/N-gram/" rel="tag"># N-gram</a>
+              <a href="/tags/Memory-Network/" rel="tag"># Memory Network</a>
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/15/hello-world/" rel="prev" title="Hello World">
+                  <i class="fa fa-angle-left"></i> Hello World
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">高鸿烨</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script>
+// 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+// 背景通过 CSS 变量 --site-bg 挂在 body::before 固定层上（见 styles.styl）
+(function () {
+  var bgs = [
+    '/images/bg/bg-1.svg',
+    '/images/bg/bg-2.svg',
+    '/images/bg/bg-3.svg',
+    '/images/bg/bg-4.svg',
+    '/images/bg/bg-5.svg',
+    '/images/bg/bg-6.svg'
+  ];
+  var current = 0;
+  // 预加载，避免首次点击时闪白
+  bgs.forEach(function (u) { var img = new Image(); img.src = u; });
+  document.addEventListener('click', function () {
+    var next;
+    do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
+    current = next;
+    document.documentElement.style.setProperty('--site-bg', 'url(' + bgs[current] + ')');
+  });
+})();
+</script>
+
+</body>
+</html>
