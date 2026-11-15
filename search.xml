@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Hello World</title>
+    <url>/2026/11/15/hello-world/</url>
+    <content><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
+Quick StartCreate a new post$ hexo new &quot;My New Post&quot;
+
+More info: Writing
+Run server$ hexo server
+
+More info: Server
+Generate static files$ hexo generate
+
+More info: Generating
+Deploy to remote sites$ hexo deploy
+
+More info: Deployment
+]]></content>
+  </entry>
+  <entry>
     <title>DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）</title>
     <url>/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/</url>
     <content><![CDATA[
@@ -638,23 +656,5 @@ Engram 的知识检索为什么比 FFN 的计算方式快？它做了哪些工�
         <tag>Memory Network</tag>
         <tag>论文笔记</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2026/11/15/hello-world/</url>
-    <content><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick StartCreate a new post$ hexo new &quot;My New Post&quot;
-
-More info: Writing
-Run server$ hexo server
-
-More info: Server
-Generate static files$ hexo generate
-
-More info: Generating
-Deploy to remote sites$ hexo deploy
-
-More info: Deployment
-]]></content>
   </entry>
 </search>
