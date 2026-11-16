@@ -27,8 +27,16 @@
 <meta property="og:site_name" content="Gao HongYe">
 <meta property="og:description" content="B站课程《DeepSeek Engram 论文串讲》的完整课堂笔记，附 16 个概念卡片表与 7 道面试速答自测题">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s3_engram-cells.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s4_ffn-kvm.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s5_pkm.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s8_ngrammer.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s11_engram-arch.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s12_gating-heatmap.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s13_ushape.png">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s13_ablation.png">
 <meta property="article:published_time" content="2026-11-15T13:50:00.000Z">
-<meta property="article:modified_time" content="2026-11-15T13:49:00.852Z">
+<meta property="article:modified_time" content="2026-11-16T03:56:28.707Z">
 <meta property="article:author" content="高鸿烨">
 <meta property="article:tag" content="DeepSeek">
 <meta property="article:tag" content="Engram">
@@ -36,6 +44,7 @@
 <meta property="article:tag" content="Memory Network">
 <meta property="article:tag" content="论文笔记">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s3_engram-cells.png">
 
 
 <link rel="canonical" href="https://jizhuwojiaopaozong.github.io/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/">
@@ -272,9 +281,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2026-11-15 21:50:00 / 修改时间：21:49:00" itemprop="dateCreated datePublished" datetime="2026-11-15T21:50:00+08:00">2026-11-15</time>
+      <time title="创建时间：2026-11-15 21:50:00" itemprop="dateCreated datePublished" datetime="2026-11-15T21:50:00+08:00">2026-11-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-11-16 11:56:28" itemprop="dateModified" datetime="2026-11-16T11:56:28+08:00">2026-11-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -353,13 +368,15 @@
 <hr>
 <h2 id="3-Engram-一词的由来"><a href="#3-Engram-一词的由来" class="headerlink" title="3. Engram 一词的由来"></a>3. Engram 一词的由来</h2><p>DeepSeek 在这里玩了一个谐音梗，一词双关。第一层：Engram 发音很像 <strong>N-gram</strong>——NLP 领域早期的经典方法，这是论文的技术支线之一。第二层：Engram 本身就是个真实的科学词汇，意思是「记忆」。</p>
 <p>20 世纪初，科学家 Richard Semon 提出了这个词：他认为大脑中存在一种 neural substrate（神经基础）负责存储和提取记忆——某些神经元细胞经过化学或物理改变成为 Engram，保留了记忆；当相关线索被提起时，这类细胞被重新激活，实现 memory retrieval。这个概念长期不被认可，Semon 郁郁不得志最终自杀；后续科学家寻找 Engram 细胞的证据也失败了很长时间。转机来自光遗传学等新技术，实验终于找到了这类细胞：在特殊染色的图像里，记忆被唤醒时呈现粉红色的神经元就是 <strong>Engram 细胞</strong>，旁边未唤醒的则是 Non-Engram 细胞。</p>
+<p><img src="/images/engram/p01_s3_engram-cells.png" alt="Engram 细胞染色示意：粉色为被唤醒的记忆细胞"></p>
 <p>所以 DeepSeek 用这个词非常贴切：机制上对应 N-gram 查表，语义上对应「模型里的记忆细胞」。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：Engram &#x3D; N-gram 的谐音 + 神经科学中真实存在的「记忆细胞」，这个词本身就预告了论文的两条技术支线。</p>
 </blockquote>
 <hr>
 <h2 id="4-FFN-层就是-Key-Value-Memory"><a href="#4-FFN-层就是-Key-Value-Memory" class="headerlink" title="4. FFN 层就是 Key-Value Memory"></a>4. FFN 层就是 Key-Value Memory</h2><p>第一条支线：Memory 方向的工作。Transformer 提出后大家其实并不理解它为什么有效，于是反过来研究它的原理，几篇论文层层递进。Facebook 2019 年提出<strong>语言模型本身就可以作为 Knowledge Base</strong>——在此之前 NLP 做知识库的常用方法是 Knowledge Graph（节点和边表示知识关系，给定 query 去图里提取答案），而基于 Transformer 的语言模型（如 BERT）已经能把知识存在参数里，不再需要外部的图。Google 2020 年对 T5 得出类似结论，并且说了一句很关键的话：模型回答一些问题<strong>不需要外部知识或 context，直接 lookup 参数中存储的信息</strong>——这正是 Engram 想做的事的雏形。</p>
-<p>但知识到底是怎么存的？2021 年的一篇论文给出了奠基性回答：<strong>FFN 层就是一个 key-value memory</strong>。FFN 一般有两层参数：第一层参数当 <strong>key</strong>，第二层参数当 <strong>value</strong>。输入先与第一层参数做矩阵乘法，本质是内积、是相似度计算——在参数记住的各种 pattern（比如 “It will take a”、”every once in a”）里找和输入 pattern 相似的，得到权重（不像的 pattern 权重接近 0，像的可能 1.5）；然后用这个权重对第二层的 value 做加权平均，把知识提取出来（比如输入 “Stay with you for…” 时，”while” 对应的 value 权重最大，被查询出来）。<strong>打个比方：</strong> 去图书馆借书——第一层参数是书的 index（key），第二层参数是书的内容（value），有了 index 就能快速找到书。</p>
+<p>但知识到底是怎么存的？2021 年的一篇论文给出了奠基性回答：<strong>FFN 层就是一个 key-value memory</strong>。FFN 一般有两层参数：第一层参数当 <strong>key</strong>，第二层参数当 <strong>value</strong>。输入先与第一层参数做矩阵乘法，本质是内积、是相似度计算——在参数记住的各种 pattern（比如 “It will take a”、”every once in a”）里找和输入 pattern 相似的，得到权重（不像的 pattern 权重接近 0，像的可能 1.5）；然后用这个权重对第二层的 value 做加权平均，把知识提取出来（比如输入 “Stay with you for…” 时，”while” 对应的 value 权重最大，被查询出来）。</p>
+<p><img src="/images/engram/p01_s4_ffn-kvm.png" alt="FFN 层 key-value memory 示意：一层参数为 key、二层参数为 value"><strong>打个比方：</strong> 去图书馆借书——第一层参数是书的 index（key），第二层参数是书的内容（value），有了 index 就能快速找到书。</p>
 <p>微软 2022 年再进一步，提出<strong>知识神经元（Knowledge Neurons）</strong>：FFN 里特定的神经元对应特定的知识，问 Ireland 的首都，一组特定神经元被激活，然后回答 Dublin。注意这里所有的 key 和 value 都是可学习参数，靠反向传播更新。</p>
 <p>问题也随之暴露：这种存取知识的方式<strong>每一层都要经过大量计算</strong>，即使后来有些工作把过程变稀疏，仍然要算。DeepSeek 的追问是：像「Ireland 的首都」这种相对固定的知识，能不能直接搞一个参数表，用时查询，跳过 FFN 的大量计算？另一篇提出 <strong>Concept Depth（概念深度）</strong> 的论文佐证了这个动机：简单 task 在浅层就能形成概念，复杂 task 要到深层才能形成，弱一点的模型可能走到最后一层概念还没形成——对常识而言，逐层计算这种方式本身就不划算，直接放外部 memory 里让模型去提取就好。</p>
 <blockquote>
@@ -374,6 +391,7 @@
 </ul>
 <p>基本流程：输入先经过一个 query network（可以就是一个简单线性层做 projection）映射成 query；用 k-nearest-neighbor 在 key 里找 top-k（比如 top-2）；取出对应的 value 做加权平均输出。</p>
 <p>瓶颈在于 key 可能非常庞大——图书馆里书太多，index 太多，拿 query 逐个比对会非常慢。product key 的办法是「切分」：假如原始 key 是 128 维向量，从中切成两半，前一半作为第一套子 key、后一半作为第二套子 key；query 也同样切开，前半查第一套、后半查第二套，最后把结果组合。每套子 key 只有很少的可能（比如各 3 种），但两套的排列组合（外积）能表达巨大的 key 空间——想象一个矩阵，行向量和列向量的组合覆盖整个矩阵。这样就极大减少了需要存储和比对的 key 数目，查询速度大幅提升。用法是在某些层把 FFN 换成 PKM layer。</p>
+<p><img src="/images/engram/p01_s5_pkm.png" alt="PKM product key memory layer 查询示意"></p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：PKM 用「子 key 切分 + 组合」的查表方式实现了稀疏 key-value memory，让 Memory Layer 既省计算又能做大——Engram 继承了查表思想，只是把 product key 换成了 hash。</p>
 </blockquote>
@@ -403,6 +421,7 @@
 
 <p>第一道坎是<strong>词表爆炸</strong>：unigram 词表大小是 V 的话，bigram 词表就是 V²。原始词表 32000，bigram 就是约 10 亿（billion 级），没法做。作者的解法是<strong>codebook 降维</strong>：对 token embedding 做 k-means clustering，聚成 4096 个类，每个 cluster 就是 codebook 里的一个 vector——直观上就是把语义相似的 token 聚到一起用一个 id 表示。词表从 32000 压到 4096 后，bigram 词表变成 4096²≈1600 万（16 million），量级可以接受了。组合方式也简单：把相邻两个 token 离散化后的 codebook id 拼在一起，就是一个新的 bigram id。</p>
 <p>第二道坎是<strong>大表查询慢</strong>：1600 万行的 embedding 表，逐行找太慢。解法是 <strong>hash</strong>：hash 查询的算法复杂度是 O(1)，具体 hash function 就是对随机质数取模，非常常规。最后把查到的 bigram embedding 和最初的 unigram embedding <strong>concatenate</strong> 起来，输出既含原始 unigram 信息也含 bigram 信息。值得强调：这里的 bigram embedding 是 <strong>trainable</strong> 的——这一点和 DeepSeek Engram 完全一样。</p>
+<p><img src="/images/engram/p01_s8_ngrammer.png" alt="N-Grammer bigram embedding 生成与 hash 查表流程"></p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：N-Grammer &#x3D; codebook 聚类降维解决 n-gram 词表爆炸 + hash 实现 O(1) 查大表 + 与 unigram embedding 拼接；这两板斧 Engram 全都接了过去。</p>
 </blockquote>
@@ -426,6 +445,7 @@
 <hr>
 <h2 id="11-Engram-架构：用查表实现条件记忆"><a href="#11-Engram-架构：用查表实现条件记忆" class="headerlink" title="11. Engram 架构：用查表实现条件记忆"></a>11. Engram 架构：用查表实现条件记忆</h2><p>回到正题。Engram 论文的 motivation：给 Transformer 这样的模型建立一个 <strong>conditional memory（条件记忆）</strong>，用 n-gram embedding 实现，并使用各种 lookup 机制让查找在 O(1) 复杂度内完成。这里有个重要的概念区分：现在的大语言模型其实在做两件事——<strong>Reasoning</strong> 和 <strong>Knowledge Retrieval</strong>。而现有架构里知识检索仍要靠计算（simulating retrieval through computation），就像不背九九乘法表的人连简单乘法都要现推。</p>
 <p>架构图一看就能和前面的 Memory 工作联系起来：这就是一个 memory layer，只是插的位置不同——Google 是把 embedding layer 插在模型前端，DeepSeek 放在这个位置，也可以理解为 Google 那个 embedding layer 的变种。Engram layer 做的事就是 n-gram 查表，用了 <strong>2-gram 和 3-gram 的结合</strong>（讲者认为把二者合到一起是这篇论文相对新颖的点）：给定输入，既查它对应的 2-gram 也查 3-gram，全部用 hash function 查，速度约 O(1)；查到的 embedding 直接 concatenate，然后进入 gating。</p>
+<p><img src="/images/engram/p01_s11_engram-arch.png" alt="Engram 模块架构：2-gram/3-gram hash 查表 + gating"></p>
 <p>gating 部分是一个类似 attention 的结构：查出来的 embedding 经过两个 linear projection，一个的输出当 <strong>value</strong>，另一个当 <strong>key</strong>，原始输入当 <strong>query</strong>；scaled dot product 算出一个 <strong>alpha</strong>，就是门控值；alpha 和 value 相乘，控制多少 n-gram 信息进入输出——alpha 越大，进入的信息越多。最后还加了一个 convolution，讲者认为起 smoothing 或 fusion 作用，但作者自己的 ablation study 也说了这个 convolution 有没有影响不大，不是关键。为避免 hash 常见的 <strong>collision</strong>，用了多个不同的 hash function——这是 hash 的常用做法。整套设计正是 sparsity 思想的又一次落地：查表引入大量参数，计算量却很小。</p>
 <p>训练与推理的形态不同：training 时巨大的 embedding table 在不同 GPU 之间 share；inference 时可以 <strong>offload 到 CPU memory</strong>。DeepSeek 还由此提出 <strong>memory hierarchy（记忆层级）</strong> 分层机制：常见的 n-gram 放比较快的内存，不常见的放比较慢的内存。</p>
 <p>和前序工作对照着看：n-gram lookup + gating 把 local dependencies（固定搭配）直接提取出来，网络不再需要对这些固定搭配做 key-value 式的计算；还记得概念深度那篇论文说复杂观念要到很深的层才能学会吗——这种方式恰好避免了那个问题。</p>
@@ -435,15 +455,18 @@
 <hr>
 <h2 id="12-工程细节：tokenizer-压缩与多头-hash"><a href="#12-工程细节：tokenizer-压缩与多头-hash" class="headerlink" title="12. 工程细节：tokenizer 压缩与多头 hash"></a>12. 工程细节：tokenizer 压缩与多头 hash</h2><p>第一个细节是 <strong>tokenizer compression（词表压缩）</strong>：原始 tokenizer 会把不同大小写、不同拼写形态的 token 当成不同 token；DeepSeek 把它们统一成一个——各种各样的 a 都归成 a，各种各样的 o 都归成 o，从而压缩 tokenizer。对比 N-Grammer 用 codebook（k-means 聚类）做压缩，DeepSeek 用了更简单的规则方法，但目的完全一样：让 vocabulary size 更小，后面算 n-gram 时相对容易——这正是第 9 节方法论里「化繁为简」的实例。</p>
 <p>第二个细节是查表：DeepSeek 沿用前人思想做 hash，为避免 collision 用了 <strong>multi-head 的 hash n-gram</strong>，且每一路的 hash 方式就是非常简单的<strong>异或</strong>。和 PKM 的 product key 切分查询不同，这里直接对离散的 n-gram 做 hash 定位，更简单也更快。</p>
-<p>第三个细节是 gating 的可视化证据：论文用热力图展示 gating 里的 alpha，红色越深表示 alpha 越大（看的时候要把前面的 token 和后面一系列 n-gram 连起来看）。结果是 gating 确实学出了大量固定搭配：英文里的 Diana 与 the princess of Wales；中文里的「四大」与「发明」、「造纸」与「术」、「指南」与「针」、「印刷」与「术」、人名「仲景」与「张」。有了 n-gram lookup 和 gating，网络就不需要再对这些固定搭配做前面 key-value memory 里那种计算了。</p>
+<p>第三个细节是 gating 的可视化证据：论文用热力图展示 gating 里的 alpha，红色越深表示 alpha 越大（看的时候要把前面的 token 和后面一系列 n-gram 连起来看）。结果是 gating 确实学出了大量固定搭配：英文里的 Diana 与 the princess of Wales；中文里的「四大」与「发明」、「造纸」与「术」、「指南」与「针」、「印刷」与「术」、人名「仲景」与「张」。</p>
+<p><img src="/images/engram/p01_s12_gating-heatmap.png" alt="Gating alpha 热力图：模型学出的固定搭配">有了 n-gram lookup 和 gating，网络就不需要再对这些固定搭配做前面 key-value memory 里那种计算了。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：三个工程动作服务于同一个目标——表更小（tokenizer 规则压缩替代 codebook）、查得快且无冲突（multi-head hash 异或）、用得稳（gating 学出固定搭配、过滤检索信息）。</p>
 </blockquote>
 <hr>
 <h2 id="13-实验结果：U-型分配与消融"><a href="#13-实验结果：U-型分配与消融" class="headerlink" title="13. 实验结果：U 型分配与消融"></a>13. 实验结果：U 型分配与消融</h2><p>先看 <strong>MoE 与 Engram 的算力分配</strong>。同样 compute budget 下，两者的比例呈现一条 <strong>U-shape</strong> 曲线：横坐标是 allocation 百分比，纵坐标是 validation loss（越低越好）。右端是没有 Engram layer 的纯 MoE；左端 MoE 占 40%、60% 时性能反而差；最好的区间在 MoE 占七八成、Engram 占两三成左右。这背后仍是不可能三角的变体：算力固定时，MoE 和 Engram 抢的是同一份 sparsity 预算。作者的说法是 Engram 是 MoE 的 <strong>complement（补充）</strong>——也有一些工作提到 memory network 和 MoE 有等价之处，把 Engram 看成 memory network 的变种的话，它就是 MoE 的某种特殊形式；两者都提供 sparsity，所以存在一个分配的 sweet spot。讲者坦言对 U-shape 背后的深层原因想得不是很清楚，欢迎读者留言讨论。</p>
+<p><img src="/images/engram/p01_s13_ushape.png" alt="MoE 与 Engram 算力分配的 U 型曲线"></p>
 <p><strong>Scaling law 实验</strong>：把 Engram 的 embedding matrix 不断做大（参数达到 10 的 7 次方量级），模型性能不断提高。这类实验在 memory network 等前序工作里很多人做过——scale up external table 能有效提升 Transformer 性能，同时不引入更多 compute。</p>
 <p><strong>模型对比</strong>：dense model、MoE model、Engram model 在不同任务上比，MoE 好于 dense，Engram 基本上在所有任务上超越 MoE；把 Engram 从 27B 做到 40B，性能还有进一步提高。</p>
 <p><strong>Ablation study</strong>：以带 Engram 的完整版为 100% 基准，把 Engram 模块整个去掉，看各任务性能下降多少。最右边需要 <strong>factual knowledge</strong> 的任务下降最多；其次是算法、数学类的 reasoning 任务，下降也非常多；而需要较多阅读理解、或只靠常识推理的任务下降不明显。这说明 Engram 对知识的存储和提取类任务非常关键——这和知识神经元的观察相呼应：事实性知识本来就适合定位化存储，Engram 给了它一个更直接的存放处。</p>
+<p><img src="/images/engram/p01_s13_ablation.png" alt="消融实验：去掉 Engram 后各任务性能下降"></p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：MoE 管条件计算、Engram 管条件记忆，固定算力下约「MoE 七八成 + Engram 两三成」最优；scaling 大表持续涨点，消融证明 Engram 贡献最大的是事实性知识。</p>
 </blockquote>
