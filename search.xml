@@ -902,7 +902,19 @@ $\mathcal{H}_l^{\mathrm{res}} \in \mathbb{R}^{n \times n}$：残差混合矩阵�
 $\mathcal{H}_l^{\mathrm{pre}} \in \mathbb{R}^{1 \times n}$：把 n 路特征聚合成 1 路送进 $\mathcal{F}$
 $\mathcal{H}_l^{\mathrm{post}} \in \mathbb{R}^{1 \times n}$：把 $\mathcal{F}$ 的 1 路输出再广播回 n 路
 
-x_l (n×C) ─→ H^res 混合 ────────────────────────┐     │                                            ⊕ ─→ x_&#123;l+1&#125; (n×C)     └─→ H^pre 聚合 ─→ F(·, W_l) ─→ H^post 广播 ─┘
+
+
+
+graph LR
+  X[xl n×C] --&gt; R[Hres 混合]
+  X --&gt; P[Hpre 聚合]
+  P --&gt; F[Layer F]
+  F --&gt; Q[Hpost 广播]
+  R --&gt; S((相加))
+  Q --&gt; S
+  S --&gt; Y[xl+1 n×C]
+
+
 
 精妙之处在于成本：$\mathcal{F}$（注意力&#x2F;FFN）仍然只处理 $1 \times C$ 的聚合特征，计算量一分没加；新增参数只是三个小矩阵，且 $n \ll C$。等于用几乎免费的线性混合换来了更丰富的拓扑连接——原笔记的比喻是「不改变计算开销的前提下显著提升拓扑复杂性」。
 
@@ -941,7 +953,17 @@ $$\begin{cases} \vec{x}’_l &#x3D; \mathrm{RMSNorm}(\vec{x}_l) \ \tilde{\mathca
 $$\mathcal{H}_l^{\mathrm{pre}} &#x3D; \sigma(\tilde{\mathcal{H}}_l^{\mathrm{pre}}), \quad \mathcal{H}_l^{\mathrm{post}} &#x3D; 2\sigma(\tilde{\mathcal{H}}_l^{\mathrm{post}}), \quad \mathcal{H}_l^{\mathrm{res}} &#x3D; \mathrm{Sinkhorn\text{-}Knopp}(\tilde{\mathcal{H}}_l^{\mathrm{res}})$$
 Sinkhorn 算子分两步走：先取 $\mathbf{M}^{0} &#x3D; \exp(\tilde{\mathcal{H}}_l^{\mathrm{res}})$ 把任意实矩阵变成正矩阵（顺带保证非负），再交替做列归一化和行归一化：
 $$\mathbf{M}^{(t)} &#x3D; \mathcal{T}_r \left( \mathcal{T}_c (\mathbf{M}^{(t-1)}) \right)$$
-H̃^res (任意实矩阵) ─→ exp ─→ M⁰ (正矩阵)        ┌─→ T_c 列归一 ─→ T_r 行归一 ─┐        └──────── 重复 20 次 ←────────┘                     └─→ P_Mres(H^res) ≈ 双随机
+
+
+
+graph TD
+  A[Hres 原始分数] --&gt; B[exp 变正矩阵 M0]
+  B --&gt; C[Tc 列归一]
+  C --&gt; D[Tr 行归一]
+  D --&gt;|重复 20 次| C
+  D --&gt; E[投影结果 近似双随机]
+
+
 
 理论上正矩阵经无穷次交替归一化收敛到双随机矩阵；工程上只迭代 20 次——不保证完美落在流形上，但足够接近（原笔记的热力图里 mHC 的列和已在 1.00 附近小幅浮动）。对比热力图非常直观：HC 的 $\mathcal{H}^{\mathrm{res}}$ 元素是 ±几十甚至 ±几百的狂野数值，复合后更失控；mHC 投影后的元素全部落在 $[0,1]$、行列和贴近 1，60 层复合后依然平稳。
 内存开销则靠三件工程武器压回去：Kernel Fusion 把整段 Sinkhorn 迭代合并进一个 kernel、只做一次 HBM 读写；梯度检查点在反向时重算激活、削掉内存峰值；DualPipe 通信调度解耦计算与通信依赖、掩盖多残差流的额外通信。三管齐下，4 路残差流下 mHC 相对 HC 只增加 6.7% 训练时间。
