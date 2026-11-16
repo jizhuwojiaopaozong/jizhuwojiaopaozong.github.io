@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jizhuwojiaopaozong.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="小红书图文笔记《DeepSeek如何让N-gram在大模型时代重获新生》的结构化解读：Engram 架构、多头哈希、上下文感知门控、mHC 结合与实验消融">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DeepSeek 如何让 N-gram 在大模型时代重获新生（小红书图文解读笔记）">
+<meta property="og:url" content="https://jizhuwojiaopaozong.github.io/2026/11/16/deepseek-engram-xhs-graphic-notes/index.html">
+<meta property="og:site_name" content="Gao HongYe">
+<meta property="og:description" content="小红书图文笔记《DeepSeek如何让N-gram在大模型时代重获新生》的结构化解读：Engram 架构、多头哈希、上下文感知门控、mHC 结合与实验消融">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card2.jpg">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card6.jpg">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card8.jpg">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card9.jpg">
+<meta property="article:published_time" content="2026-11-16T06:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-16T06:27:26.574Z">
+<meta property="article:author" content="高鸿烨">
+<meta property="article:tag" content="DeepSeek">
+<meta property="article:tag" content="Engram">
+<meta property="article:tag" content="N-gram">
+<meta property="article:tag" content="小红书">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card2.jpg">
+
+
+<link rel="canonical" href="https://jizhuwojiaopaozong.github.io/2026/11/16/deepseek-engram-xhs-graphic-notes/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jizhuwojiaopaozong.github.io/2026/11/16/deepseek-engram-xhs-graphic-notes/","path":"2026/11/16/deepseek-engram-xhs-graphic-notes/","title":"DeepSeek 如何让 N-gram 在大模型时代重获新生（小红书图文解读笔记）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>DeepSeek 如何让 N-gram 在大模型时代重获新生（小红书图文解读笔记） | Gao HongYe</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/next-theme-pjax/0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/medium-zoom/1.1.0/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pangu/7.2.1/pangu.umd.js" integrity="sha256-kRsxecBnwG6mULFPe2E6UKnNm8XfDOuDwCOprjLZuX8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Gao HongYe</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">ghy Blogs</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%BA%AF%E6%BA%90%EF%BC%9AN-gram-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-LLM-%E7%9A%84%E9%AB%98%E6%95%88%E5%A4%96%E6%8C%82"><span class="nav-text">1. 溯源：N-gram 为什么是 LLM 的高效外挂</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%8A%A8%E6%9C%BA%EF%BC%9A%E8%AF%AD%E8%A8%80%E7%9A%84%E5%8F%8C%E9%87%8D%E6%80%A7%E4%B8%8E%E8%AE%A1%E7%AE%97%E6%B5%AA%E8%B4%B9"><span class="nav-text">2. 动机：语言的双重性与计算浪费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Engram-%E6%9E%B6%E6%9E%84%EF%BC%9A%E5%A4%A7%E8%A7%84%E6%A8%A1%E5%93%88%E5%B8%8C%E6%A3%80%E7%B4%A2%E6%80%8E%E4%B9%88%E8%90%BD%E5%9C%B0"><span class="nav-text">3. Engram 架构：大规模哈希检索怎么落地</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%B8%8A%E4%B8%8B%E6%96%87%E6%84%9F%E7%9F%A5%E9%97%A8%E6%8E%A7%E4%B8%8E%E7%9F%AD%E5%8D%B7%E7%A7%AF"><span class="nav-text">4. 上下文感知门控与短卷积</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%B8%8E-mHC-%E7%BB%93%E5%90%88%EF%BC%9A%E5%A4%9A%E5%88%86%E6%94%AF%E4%B8%8B%E7%9A%84%E5%8F%82%E6%95%B0%E5%85%B1%E4%BA%AB"><span class="nav-text">5. 与 mHC 结合：多分支下的参数共享</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%AE%AD%E7%BB%83%E4%B8%8E%E6%8E%A8%E7%90%86%EF%BC%9A%E7%A1%AE%E5%AE%9A%E6%80%A7%E6%8D%A2%E6%9D%A5%E7%9A%84%E7%B3%BB%E7%BB%9F%E4%BC%98%E5%8C%96"><span class="nav-text">6. 训练与推理：确定性换来的系统优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%AE%9E%E9%AA%8C%EF%BC%9AU-%E5%9E%8B%E9%85%8D%E6%AF%94%E3%80%81%E6%9C%89%E6%95%88%E6%B7%B1%E5%BA%A6%E4%B8%8E%E8%B0%81%E4%BE%9D%E8%B5%96-Engram"><span class="nav-text">7. 实验：U 型配比、有效深度与谁依赖 Engram</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="nav-text">8. 小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE"><span class="nav-text">本讲知识地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93"><span class="nav-text">本讲小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87"><span class="nav-text">概念卡片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Engram"><span class="nav-text">Engram</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E5%A4%B4%E5%93%88%E5%B8%8C"><span class="nav-text">多头哈希</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MoE"><span class="nav-text">MoE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E6%84%9F%E7%9F%A5%E9%97%A8%E6%8E%A7"><span class="nav-text">上下文感知门控</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%B5%8B%E9%A2%98%EF%BC%88%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94%EF%BC%89"><span class="nav-text">自测题（面试速答）</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="高鸿烨"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">高鸿烨</p>
+  <div class="site-description" itemprop="description">Gao HongYe 的个人博客</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jizhuwojiaopaozong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:m15944834309@163.com" title="E-Mail → mailto:m15944834309@163.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://github.com/jizhuwojiaopaozong" title="https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener" target="_blank">Gao HongYe</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://theme-next.js.org/" title="https:&#x2F;&#x2F;theme-next.js.org" rel="noopener" target="_blank">NexT</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jizhuwojiaopaozong.github.io/2026/11/16/deepseek-engram-xhs-graphic-notes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="高鸿烨">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Gao HongYe">
+      <meta itemprop="description" content="Gao HongYe 的个人博客">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="DeepSeek 如何让 N-gram 在大模型时代重获新生（小红书图文解读笔记） | Gao HongYe">
+      <meta itemprop="description" content="小红书图文笔记《DeepSeek如何让N-gram在大模型时代重获新生》的结构化解读：Engram 架构、多头哈希、上下文感知门控、mHC 结合与实验消融">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DeepSeek 如何让 N-gram 在大模型时代重获新生（小红书图文解读笔记）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2026-11-16 14:30:00 / 修改时间：14:27:26" itemprop="dateCreated datePublished" datetime="2026-11-16T14:30:00+08:00">2026-11-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/N-gram/" itemprop="url" rel="index"><span itemprop="name">N-gram</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+            <div class="post-description">小红书图文笔记《DeepSeek如何让N-gram在大模型时代重获新生》的结构化解读：Engram 架构、多头哈希、上下文感知门控、mHC 结合与实验消融</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>核心主线：语言模型不该只有计算——Engram 用多头哈希把静态 N-gram 知识做成 O(1) 查表的条件记忆外挂，与 MoE 的条件计算互补，补齐存储稀疏这块拼图。<br>本讲目标：读完你能回答「N-gram 查表为什么是 O(1)、它的词表爆炸怎么解决」「Engram 插在哪些层、为什么」「门控和多头哈希各自解决什么噪声」<br>课程来源：DeepSeek如何让N-gram在大模型时代重获新生（小红书图文笔记，作者：居丽叶，9 张知识卡，笔记 ID 69760827000000000c034c4c）</p>
+</blockquote>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#1-%E6%BA%AF%E6%BA%90n-gram-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-llm-%E7%9A%84%E9%AB%98%E6%95%88%E5%A4%96%E6%8C%82">1. 溯源：N-gram 为什么是 LLM 的高效外挂</a></li>
+<li><a href="#2-%E5%8A%A8%E6%9C%BA%E8%AF%AD%E8%A8%80%E7%9A%84%E5%8F%8C%E9%87%8D%E6%80%A7%E4%B8%8E%E8%AE%A1%E7%AE%97%E6%B5%AA%E8%B4%B9">2. 动机：语言的双重性与计算浪费</a></li>
+<li><a href="#3-engram-%E6%9E%B6%E6%9E%84%E5%A4%A7%E8%A7%84%E6%A8%A1%E5%93%88%E5%B8%8C%E6%A3%80%E7%B4%A2%E6%80%8E%E4%B9%88%E8%90%BD%E5%9C%B0">3. Engram 架构：大规模哈希检索怎么落地</a></li>
+<li><a href="#4-%E4%B8%8A%E4%B8%8B%E6%96%87%E6%84%9F%E7%9F%A5%E9%97%A8%E6%8E%A7%E4%B8%8E%E7%9F%AD%E5%8D%B7%E7%A7%AF">4. 上下文感知门控与短卷积</a></li>
+<li><a href="#5-%E4%B8%8E-mhc-%E7%BB%93%E5%90%88%E5%A4%9A%E5%88%86%E6%94%AF%E4%B8%8B%E7%9A%84%E5%8F%82%E6%95%B0%E5%85%B1%E4%BA%AB">5. 与 mHC 结合：多分支下的参数共享</a></li>
+<li><a href="#6-%E8%AE%AD%E7%BB%83%E4%B8%8E%E6%8E%A8%E7%90%86%E7%A1%AE%E5%AE%9A%E6%80%A7%E6%8D%A2%E6%9D%A5%E7%9A%84%E7%B3%BB%E7%BB%9F%E4%BC%98%E5%8C%96">6. 训练与推理：确定性换来的系统优化</a></li>
+<li><a href="#7-%E5%AE%9E%E9%AA%8Cu-%E5%9E%8B%E9%85%8D%E6%AF%94%E6%9C%89%E6%95%88%E6%B7%B1%E5%BA%A6%E4%B8%8E%E8%B0%81%E4%BE%9D%E8%B5%96-engram">7. 实验：U 型配比、有效深度与谁依赖 Engram</a></li>
+<li><a href="#8-%E5%B0%8F%E7%BB%93">8. 小结</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE">本讲知识地图</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93">本讲小结</a></li>
+<li><a href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87">概念卡片</a></li>
+<li><a href="#%E8%87%AA%E6%B5%8B%E9%A2%98%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94">自测题（面试速答）</a></li>
+</ul>
+<hr>
+<h2 id="1-溯源：N-gram-为什么是-LLM-的高效外挂"><a href="#1-溯源：N-gram-为什么是-LLM-的高效外挂" class="headerlink" title="1. 溯源：N-gram 为什么是 LLM 的高效外挂"></a>1. 溯源：N-gram 为什么是 LLM 的高效外挂</h2><p>先对齐粒度：在大模型语境下，一个 Gram 就是一个 Token，N-gram 的 N 是参与计算的连续 Token 长度。以「中国的首都是北京」为例，分词结果是 [“中国”, “的”, “首都”, “是”, “北京”]：<strong>2-gram</strong> 统计连续 2 个 Token 的出现概率，存条件概率 P(w_t|w_{t-1})——输入当前 Token「首都」时，查表发现后面接「是」的频次极高；<strong>3-gram</strong> 根据前 2 个 Token 预测第 3 个，存 P(w_t|w_{t-1}, w_{t-2})——窗口滑到「中国的首都」时，查表可以直接锁定下一个 Token。</p>
+<p>N-gram 的优势在于<strong>确定性带来的极致效率</strong>：检索索引仅取决于输入 Token 序列，查询复杂度 O(1)。但它的问题也显而易见：<strong>参数空间呈指数级爆炸且极其稀疏</strong>——对 DeepSeek 使用的 128k 词表模型，Bigram 的理论组合空间高达 163 亿（12.8 万的平方），Trigram 更是天文数字。</p>
+<p>而标准 Transformer 架构缺乏原生的知识检索原语，目前的 LLM 实际上被迫在数十层 Attention 和 FFN 的深度迭代中，通过昂贵的计算去<strong>模拟</strong>这种本该由查表完成的局部模式匹配。DeepSeek 敏锐地察觉到这种低效：LLM 正在消耗极其昂贵的算力去重建那些局部的、静态的、模式化的知识（命名实体、固定搭配）。既然是查表就能解决的肌肉记忆，为什么要动用深层神经网络去推导？于是 <strong>Engram</strong> 诞生了：它通过<strong>多头哈希（Multi-Head Hashing）</strong> 解决存储稀疏性，把这些静态模式从计算流中剥离，直接以<strong>条件记忆</strong>的形式外挂到 Transformer 中。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：N-gram 查表是 O(1) 的确定性检索，败在词表指数爆炸；Engram 用哈希把「见过的组合」装进表里，让静态知识不再占用神经网络计算。</p>
+</blockquote>
+<hr>
+<h2 id="2-动机：语言的双重性与计算浪费"><a href="#2-动机：语言的双重性与计算浪费" class="headerlink" title="2. 动机：语言的双重性与计算浪费"></a>2. 动机：语言的双重性与计算浪费</h2><p>理解 Engram 的价值要先对齐论文里的四个概念：</p>
+<ul>
+<li><strong>稀疏性</strong>：MoE 模型参数量巨大，但处理每个任务时只激活其中很少一部分参数</li>
+<li><strong>条件计算</strong>：MoE 实现稀疏性的方式——根据输入内容动态选择一部分专家参与计算</li>
+<li><strong>条件记忆</strong>：不通过神经网络推算知识，而是利用 N-gram 从嵌入知识表中查找静态知识</li>
+<li><strong>稀疏性分配</strong>：总参数量固定时，应该分配多少给 MoE、多少给静态记忆（Engram）</li>
+</ul>
+<p>为什么 Transformer 模拟检索很低效？语言模型包含两个子任务：<strong>组合推理</strong>和<strong>知识检索</strong>。前者需要深层的<strong>动态计算</strong>；而命名实体、固定搭配等模式是局部且静态的，可以通过 N-gram 捕捉这种局部依赖，把这些规律性特征转换为成本更低的查表操作。对应的，由于 Transformer 缺少知识检索机制，只能<strong>通过计算模拟检索过程，在早期层中消耗大量的注意力层和前馈网络来重建这些多 token 实体</strong>——论文举的例子是实体「Diana, Princess of Wales」：LLM 消耗很多层的计算才推理出这个实体，而这个过程本可以被替换为计算量更低的查表操作。</p>
+<p>Engram 的解法一句话：让条件计算（MoE）处理动态逻辑，让条件存储（Engram）负责静态检索，实现常数时间 O(1) 的知识获取。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：语言 &#x3D; 组合推理 + 知识检索；MoE 管前者、Engram 管后者，把「重建实体」的逐层计算换成查表。</p>
+</blockquote>
+<hr>
+<h2 id="3-Engram-架构：大规模哈希检索怎么落地"><a href="#3-Engram-架构：大规模哈希检索怎么落地" class="headerlink" title="3. Engram 架构：大规模哈希检索怎么落地"></a>3. Engram 架构：大规模哈希检索怎么落地</h2><p>为了让这个外挂字典跑在大模型里，DeepSeek 做了三层设计。第一是<strong>插入位置</strong>：Engram 插入到 Transformer Block 里，但不是每个层都插入——以 Engram-27B 为例，N-gram 参数高达 5.7B，<strong>只在第 2 层和第 15 层插入该模块</strong>。早期层（第 2 层）插入是为了尽早识别静态模式、释放 backbone 的计算压力；中间层（第 15 层）插入则可以利用更丰富的上下文信息进行精细的门控控制。第二是<strong>输入与异步性</strong>：Engram 的输入包含上一层的 Hidden States 以及当前 token 序列的 Input ID，且计算只依赖于当前 token 序列——这样就可以在计算前面的 Transformer Block 时，<strong>异步地查询</strong>下一层所需的 Engram 嵌入向量。</p>
+<p><img src="/images/engram-xhs/card2.jpg" alt="Engram 模型架构：检索静态 N-gram 存储，经上下文感知门控与动态 Hidden States 融合（原笔记第 2 卡）"></p>
+<p>第三是<strong>把表做小、查快</strong>。哈希检索：假设词表大小为 V，Bigram 的统计表就是 V²，但实际 N-gram 组合很稀疏——一个字能组的词数量有限，为了提高查询效率，采用哈希 N-gram 检索，<strong>只为见到过的组合分配索引</strong>。<strong>分词器压缩</strong>：为提高语义密度，Engram 首先通过预计算的映射函数 P: V→V’ 把原始 Token 压缩为规范化标识符，有效词表缩小了 23%，形成 suffix N-gram（比如「Apple」和「apple」对应不同 token ID，对 N-gram 查找显得冗余）；开源代码里的 <code>_build_lookup_table()</code> 建立一个 key2new 映射表，用 NFKC、去重音、小写化、空格归一等 normalizer 把大小写和空格统一。</p>
+<p><strong>多头哈希</strong>对付哈希冲突：两个不同输入经过哈希函数得到相同哈希值，本质是输入空间（N-gram）大于输出空间（索引空间）。数据结构课里的拉链法、开放寻址法在 GPU 中不可行——两者都会导致串行检索、效率极低。论文采用取模方式：对输入序列 t_1..t_n，哈希地址 H(t_1,…,t_n) &#x3D; (m_1<em>t_1 ⊕ m_2</em>t_2 ⊕ … ⊕ m_n*t_n) mod M，其中 m 是随机数、⊕ 是 XOR、M 是取模的质数。再用 K 个不同的哈希头对压缩后的 N-gram 上下文索引，每个头通过确定性函数 φ_{n,k} 把上下文映射到一个嵌入表 E_{n,k}，每层每个注意力头的每个 n-gram 都对应不同的 M。直观理解：虽然两个词在头 1 可能会发生冲突，但它们在头 2、头 3 同时发生冲突的概率极低。最终检索到的向量 e_t 由所有 N-gram 阶数（n&#x3D;2..N）和哈希头（k&#x3D;1..K）的嵌入向量拼接而成。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：架构三件套 &#x3D; 选择性插层（2&#x2F;15 层）+ 分词器压缩缩表 23% + 多头 XOR 取模哈希只为见过的组合建索引。</p>
+</blockquote>
+<hr>
+<h2 id="4-上下文感知门控与短卷积"><a href="#4-上下文感知门控与短卷积" class="headerlink" title="4. 上下文感知门控与短卷积"></a>4. 上下文感知门控与短卷积</h2><p>检索到的静态嵌入 e_t 缺乏上下文信息，可能因哈希冲突或一词多义受到噪声影响。Engram 引入了类似于注意力的门控机制：使用当前隐藏状态 h_t 作为 Query，以检索到的存储 e_t 作为 Key 和 Value——k_t &#x3D; W_k·e_t，v_t &#x3D; W_v·e_t，W_k、W_v 是可学习投影矩阵；标量门控 α_t &#x3D; σ( RMSNorm(h_t) · RMSNorm(k_t) &#x2F; √d )。门控输出为 v̄_t &#x3D; α_t · v_t：这种设计确保了当检索内容与上下文矛盾时，门控会趋于零，从而抑制噪声，确保只有对当前有用的知识才能进入 backbone 网络。</p>
+<p>但 Engram 检索到的知识是一个个孤立的「词条」，彼此之间没有交互。为了扩展感受野并增强模型的非线性，引入了一个 <strong>short, depthwise causal convolution</strong>，把检索到的知识更好地与上下文融合，使得每个 token 都能与其他 token 的信息交互：令 V̄ 表示门控值序列，卷积核大小 w&#x3D;4、膨胀率 δ&#x3D;N、SiLU 激活，最终输出 Y &#x3D; SiLU(Conv1D(RMSNorm(V̂))) + V̂，再通过残差连接集成到 backbone：H ← H + Y。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：门控用「当前上下文 vs 检索结果」的相似度决定放行多少；短卷积把孤立词条揉进上下文，残差挂回主干。</p>
+</blockquote>
+<hr>
+<h2 id="5-与-mHC-结合：多分支下的参数共享"><a href="#5-与-mHC-结合：多分支下的参数共享" class="headerlink" title="5. 与 mHC 结合：多分支下的参数共享"></a>5. 与 mHC 结合：多分支下的参数共享</h2><p>为了追求更强的建模能力，Engram 默认集成在多分支架构（如 <strong>mHC</strong>）中，而不是标准的单流残差结构：mHC 将传统的残差流扩展为多个并行分支，信息流通过可学习的权重在分支间调节。Engram 本身跟模型架构无关，也可以用于标准的串行 Transformer Block。</p>
+<p>参数共享在效率和表达力之间取平衡：</p>
+<ul>
+<li><strong>共享部分</strong>：所有分支共享同一个<strong>稀疏嵌入表</strong>和<strong>值投影矩阵 W_V</strong></li>
+<li><strong>独立部分</strong>：每个分支拥有独立的**键投影矩阵 W_K^(m)**，其门控信号 α_t^(m) &#x3D; σ( RMSNorm(h_t^(m))ᵀ · RMSNorm(W_K^(m)·e_t) &#x2F; √d )</li>
+</ul>
+<p>计算效率上，门控输出 u_t^(m) &#x3D; α_t^(m) · (W_V·e_t)，这种设计允许把所有的线性投影融合为一个<strong>稠密 FP8 矩阵乘法</strong>，从而最大化现代 GPU 的计算利用率。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：多分支下「表和值投影共享、键投影独立」，投影融合成一次 FP8 稠密矩阵乘吃满 GPU。</p>
+</blockquote>
+<hr>
+<h2 id="6-训练与推理：确定性换来的系统优化"><a href="#6-训练与推理：确定性换来的系统优化" class="headerlink" title="6. 训练与推理：确定性换来的系统优化"></a>6. 训练与推理：确定性换来的系统优化</h2><p>与 MoE 不同：MoE 的路由依赖于上一层的动态输出，具有不可预测性；而 <strong>Engram 的检索索引仅取决于输入的 Token 序列</strong>，这种「确定性」使得系统在执行具体某层计算之前，就能预知需要调用的数据。于是有了两组系统优化：</p>
+<ul>
+<li><strong>训练阶段</strong>：对于大量的嵌入表，系统采用<strong>模型并行</strong>分片存储在不同 GPU 上，利用 <strong>All-to-All</strong> 通信原语在正向传播时收集所需的激活行、在反向传播时分发梯度，实现容量随加速器数量线性扩展</li>
+<li><strong>推理阶段</strong>：将 Engram 嵌入表卸载到<strong>主机内存</strong>中，并通过 PCIe 进行<strong>异步预取（Prefetching）</strong>——由于前向传播时内存索引可预测，当 GPU 正在处理前序 Transformer Block 时，系统已经在后台同步传输下一层 Engram 所需的数据；Engram 只放置在第 2 层和第 15 层，可以利用前序层的计算时间作为缓冲区，完全掩盖通信延迟、避免 GPU 停顿</li>
+</ul>
+<p>再加上<strong>记忆层级</strong>：由于极少数 N-gram 占据了绝大部分内存访问量，高频访问的嵌入放在更快的 HBM 或 DRAM 中，低频访问的嵌入放在更慢的存储中。</p>
+<p><img src="/images/engram-xhs/card6.jpg" alt="Engram 训练（模型并行 + All2All）与推理（卸载主机内存 + 异步预取）系统图（原笔记第 6 卡）"></p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：索引只取决于输入 ID → 可预知 → 可异步预取；100B 的表卸到 CPU 内存，吞吐量损耗低于 3%。</p>
+</blockquote>
+<hr>
+<h2 id="7-实验：U-型配比、有效深度与谁依赖-Engram"><a href="#7-实验：U-型配比、有效深度与谁依赖-Engram" class="headerlink" title="7. 实验：U 型配比、有效深度与谁依赖 Engram"></a>7. 实验：U 型配比、有效深度与谁依赖 Engram</h2><p><strong>资源配比的 U 型 Scaling Law</strong>：MoE 计算与 Engram 记忆之间的配比遵循 U 形曲线——实验证明将约 <strong>20%-25%</strong> 的稀疏参数分配给 Engram 时整体性能最佳。定义分配比例 ρ：ρ&#x3D;1 表示纯 MoE 模型，ρ&#x3D;0 表示纯 Engram 模型（此时模型失去计算能力）；损失与 ρ 呈 U 型关系，最优通常在 ρ≈75%-80% 之间。而在参数无限的情况下，<strong>embedding 参数量与损失呈幂律关系</strong>（对数线性趋势），增加 embedding 参数量能持续降低模型损失而不增加计算开销；混合模型比纯 MoE 模型更优。</p>
+<p><strong>全方位的性能提升</strong>：知识密集型任务上 Engram-27B 在 MMLU（+3.0）和 CMMLU（+4.0）表现优异，符合其增强知识存储能力的预期；令人惊讶的是<strong>通用推理、代码与数学</strong>等非知识型任务也有明显提升——引入专门的知识查找提高了表征效率，释放了 backbone 处理复杂逻辑的能力；<strong>上下文能力</strong>上，把局部依赖（固定短语、实体名）交给 Engram 后，注意力机制保留了宝贵的计算容量，更专注于管理全局上下文。</p>
+<p><strong>增加有效深度</strong>：Engram 减轻了早期层在<strong>重建静态特征</strong>上的负担，功能上等同于增加模型深度。LogitLens 计算中间层隐藏状态与最终输出分布的 KL 散度，Engram 模型在早期层 KL 散度明显更小——模型<strong>更快地完成了特征组合</strong>，表示更早进入「预测就绪」状态；<strong>CKA（Centered Kernel Alignment）</strong> 比较表征结构，虚线明显上移——Engram-27B 的第 5 层表示与 MoE 基线的第 12 层最接近，说明 Engram 在较早层实现了更深层次的表征。</p>
+<p><strong>插入层与组件消融</strong>：关于在何处注入存储，论文揭示了关键的<strong>放置权衡（Placement Trade-off）</strong>——尽早卸载局部模式重建符合分层处理直觉，但此时隐藏状态缺乏足够的全局上下文，会导致门控精度下降。实验证明<strong>第 2 层是单层插入的最佳位置</strong>；而<strong>分层设计</strong>（如同时在第 2 层和第 6 层插入两个更小的 Engram 模块）效果更佳，结合了早期干预和后期精准门控的优势。关键组件消融中，<strong>mHC、上下文感知门控和分词器压缩</strong>是提升性能最关键的三个组件。</p>
+<p><img src="/images/engram-xhs/card8.jpg" alt="插入层扫描（第 2 层最优）与组件消融（w/o gating、w/o token compress 等）（原笔记第 8 卡）"></p>
+<p><strong>谁更依赖 Engram</strong>：推理时移除 Engram 模块、保持 backbone 不变——<strong>事实知识</strong>严重依赖 Engram：TriviaQA 等任务性能遭灾难性崩溃（仅保留 29%），证明 Engram 是事实性知识的主要存储库；<strong>阅读理解</strong>表现出极强的鲁棒性（如 C3 保留 93%），说明这类任务主要依赖 backbone 的注意力机制而非静态存储。系统效率方面：将 100B 参数的嵌入表卸载至 CPU 内存，推理吞吐量损耗低于 3%（H800、512 序列、长度 Uniform(100,1024) 下，4B-Dense 从 9031.62 tok&#x2F;s 到 8858.28，8B-Dense 从 6315.52 到 6140.02）——证实通过算法与硬件的协同设计，模型可以有效绕过 GPU 显存限制实现超大规模参数扩展。</p>
+<p><img src="/images/engram-xhs/card9.jpg" alt="移除 Engram 后各任务保留性能：事实知识崩溃、阅读理解鲁棒（原笔记第 9 卡）"></p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：约 20%-25% 稀疏参数给 Engram 最优；它让早期层「预测就绪」更早；拿走它，事实知识崩、阅读理解稳。</p>
+</blockquote>
+<hr>
+<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><p>DeepSeek 证明了：语言模型不该只有计算。既然 MoE 搞定了计算稀疏，Engram 补齐的<strong>条件记忆</strong>就是存储稀疏的下一块拼图——它让模型从模式记忆中解脱出来，把算力真正花在刀刃上。对研究者的启示是：确定性检索（索引只取决于输入）是系统优化的前提，「查表 + 门控 + 异步预取」这套组合拳把存储做成了可以独立 scale 的新轴。</p>
+<p>与同分类下的 B 站串讲版笔记对照着读信息量更大：图文版补足了串讲没展开的工程细节——mHC 参数共享策略、FP8 融合矩阵乘、All-to-All 训练分片、H800 实测吞吐数据；而 PKM、N-Grammer、RETRO 这些前序工作的历史脉络，则在串讲版里更完整。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：MoE 管计算稀疏、Engram 管存储稀疏，两者按 U 型曲线分配算力，共同构成稀疏化的两条轴。</p>
+</blockquote>
+<h2 id="本讲知识地图"><a href="#本讲知识地图" class="headerlink" title="本讲知识地图"></a>本讲知识地图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">graph TD</span><br><span class="line">  R((Engram 解读))</span><br><span class="line">  subgraph 定位</span><br><span class="line">    MOE[MoE] -.-&gt;|互补分配算力| EG[Engram]</span><br><span class="line">  end</span><br><span class="line">  subgraph 检索与降噪</span><br><span class="line">    EG --&gt;|K 头索引| MH[多头哈希]</span><br><span class="line">    EG --&gt;|门控过滤| GT[上下文感知门控]</span><br><span class="line">    MH -.-&gt;|冲突噪声交给| GT</span><br><span class="line">  end</span><br><span class="line">  R --&gt; EG</span><br></pre></td></tr></table></figure>
+
+<h2 id="本讲小结"><a href="#本讲小结" class="headerlink" title="本讲小结"></a>本讲小结</h2><table>
+<thead>
+<tr>
+<th>机制&#x2F;概念</th>
+<th>解决什么问题</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>哈希 N-gram 检索</td>
+<td>V² 词表爆炸且极稀疏</td>
+<td>只为见过的组合分配索引，O(1) 查询</td>
+</tr>
+<tr>
+<td>分词器压缩</td>
+<td>大小写&#x2F;空格变体冗余</td>
+<td>规范化映射缩表 23%，形成 suffix N-gram</td>
+</tr>
+<tr>
+<td>多头哈希</td>
+<td>单头哈希冲突</td>
+<td>K 个 XOR+取模哈希头，同时冲突概率极低</td>
+</tr>
+<tr>
+<td>上下文感知门控</td>
+<td>检索结果与上下文矛盾</td>
+<td>h_t 作 Query 算标量门，矛盾时趋零抑制噪声</td>
+</tr>
+<tr>
+<td>异步预取 + 卸载</td>
+<td>百 B 级表放不下显存</td>
+<td>索引可预知 → CPU 内存 + PCIe 预取，吞吐损耗 &lt;3%</td>
+</tr>
+</tbody></table>
+<p><strong>学完能说的 3 句话：</strong></p>
+<ol>
+<li>Engram 把静态 N-gram 知识从计算流剥离成 O(1) 查表的条件记忆，与 MoE 的条件计算互补。</li>
+<li>工程上靠分词器压缩、多头哈希、选择性插层（2&#x2F;15 层）让百 B 级嵌入表跑得动、查得快。</li>
+<li>实验上 20%-25% 稀疏参数给 Engram 最优；移除后事实知识任务崩溃、阅读理解任务几乎不受影响。</li>
+</ol>
+<h2 id="概念卡片"><a href="#概念卡片" class="headerlink" title="概念卡片"></a>概念卡片</h2><h3 id="Engram"><a href="#Engram" class="headerlink" title="Engram"></a>Engram</h3><ul>
+<li>定义：以哈希 N-gram 嵌入表把静态知识外挂到 Transformer、按输入 ID 确定性查表的条件记忆模块</li>
+<li>出现：第 1 节「溯源：N-gram 为什么是 LLM 的高效外挂」、第 3 节「Engram 架构：大规模哈希检索怎么落地」</li>
+<li>依赖：多头哈希、上下文感知门控</li>
+<li>易混：MoE——MoE 是条件计算管动态逻辑，Engram 是条件存储管静态检索</li>
+</ul>
+<h3 id="多头哈希"><a href="#多头哈希" class="headerlink" title="多头哈希"></a>多头哈希</h3><ul>
+<li>定义：用 K 个哈希头（XOR 混合 + 质数取模）分别索引压缩 N-gram，靠「多头不同时冲突」降低碰撞的查表方式</li>
+<li>出现：第 1 节「溯源：N-gram 为什么是 LLM 的高效外挂」、第 3 节「Engram 架构：大规模哈希检索怎么落地」</li>
+<li>依赖：Engram</li>
+<li>易混：上下文感知门控——哈希解决「查得准不准」的冲突，门控解决「查出来的用不用」的噪声</li>
+</ul>
+<h3 id="MoE"><a href="#MoE" class="headerlink" title="MoE"></a>MoE</h3><ul>
+<li>定义：混合专家架构，按输入动态选择部分专家参与计算，以条件计算实现计算稀疏</li>
+<li>出现：第 2 节「动机：语言的双重性与计算浪费」、第 7 节「实验：U 型配比、有效深度与谁依赖 Engram」</li>
+<li>依赖：</li>
+<li>易混：Engram——MoE 管动态逻辑的条件计算，Engram 管静态知识的条件存储，固定算力下按 U 型曲线分配</li>
+</ul>
+<h3 id="上下文感知门控"><a href="#上下文感知门控" class="headerlink" title="上下文感知门控"></a>上下文感知门控</h3><ul>
+<li>定义：以当前隐藏状态为 Query、检索嵌入为 Key&#x2F;Value 的注意力式标量门，检索与上下文矛盾时趋零以抑制噪声</li>
+<li>出现：第 3 节「Engram 架构：大规模哈希检索怎么落地」、第 4 节「上下文感知门控与短卷积」</li>
+<li>依赖：Engram</li>
+<li>易混：多头哈希——门控在检索之后做上下文校验，哈希在检索之前做索引定位</li>
+</ul>
+<h2 id="自测题（面试速答）"><a href="#自测题（面试速答）" class="headerlink" title="自测题（面试速答）"></a>自测题（面试速答）</h2><ol>
+<li>Engram 为什么只在第 2 层、第 15 层这类特定层插入，而不是每层都插？（对应：Engram）</li>
+</ol>
+<p><strong>答案：</strong> 因为插入位置是一个放置权衡：早期层插入能尽早卸载局部模式重建、释放 backbone 算力，但隐藏状态还缺乏全局上下文，门控精度会下降；中间层上下文丰富、门控更精细，但干预太晚。实验证明单层插入时第 2 层最优，而分层设计（第 2 层加第 6 层两个更小模块）结合了两边优势；Engram-27B 最终选第 2 层和第 15 层，5.7B 的 N-gram 参数只挂在这两处。</p>
+<ol start="2">
+<li>多头哈希如何缓解哈希冲突？为什么不用拉链法或开放寻址法？（对应：多头哈希）</li>
+</ol>
+<p><strong>答案：</strong> 因为输入空间（N-gram）大于输出空间（索引空间），冲突必然发生。拉链法和开放寻址法在 GPU 上会导致串行检索、效率极低，所以论文用 XOR 混合加质数取模的确定性哈希，再开 K 个哈希头、每头对应不同的模数 M 和嵌入表——两个词在头 1 冲突，在头 2、头 3 同时冲突的概率极低，最终向量由所有阶数和所有头的嵌入拼接而成，冲突被稀释。</p>
+<ol start="3">
+<li>上下文感知门控解决什么噪声问题？检索内容与上下文矛盾时门控如何表现？（对应：上下文感知门控）</li>
+</ol>
+<p><strong>答案：</strong> 它解决静态检索嵌入缺乏上下文、可能因哈希冲突或一词多义带噪的问题。做法是把当前隐藏状态 h_t 当 Query、检索嵌入 e_t 经可学习投影当 Key 和 Value，算标量门 α_t &#x3D; σ(RMSNorm(h_t)ᵀRMSNorm(k_t)&#x2F;√d)，输出 α_t·v_t；当检索内容与上下文矛盾时门控趋于零，把噪声挡在 backbone 之外，只有对当前有用的知识才进入网络。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DeepSeek/" rel="tag"># DeepSeek</a>
+              <a href="/tags/Engram/" rel="tag"># Engram</a>
+              <a href="/tags/N-gram/" rel="tag"># N-gram</a>
+              <a href="/tags/%E5%B0%8F%E7%BA%A2%E4%B9%A6/" rel="tag"># 小红书</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/" rel="prev" title="DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）">
+                  <i class="fa fa-angle-left"></i> DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">高鸿烨</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script>
+// 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+// 背景通过 CSS 变量 --site-bg 挂在 body::before 固定层上（见 styles.styl）
+(function () {
+  var bgs = [
+    '/images/bg/bg-1.svg',
+    '/images/bg/bg-2.svg',
+    '/images/bg/bg-3.svg',
+    '/images/bg/bg-4.svg',
+    '/images/bg/bg-5.svg',
+    '/images/bg/bg-6.svg'
+  ];
+  var current = 0;
+  // 预加载，避免首次点击时闪白
+  bgs.forEach(function (u) { var img = new Image(); img.src = u; });
+  document.addEventListener('click', function () {
+    var next;
+    do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
+    current = next;
+    document.documentElement.style.setProperty('--site-bg', 'url(' + bgs[current] + ')');
+  });
+})();
+</script>
+
+</body>
+</html>
