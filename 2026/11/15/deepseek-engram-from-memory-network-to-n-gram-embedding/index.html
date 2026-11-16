@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s13_ushape.png">
 <meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram/p01_s13_ablation.png">
 <meta property="article:published_time" content="2026-11-15T13:50:00.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:56:28.707Z">
+<meta property="article:modified_time" content="2026-11-16T07:08:56.542Z">
 <meta property="article:author" content="高鸿烨">
 <meta property="article:tag" content="DeepSeek">
 <meta property="article:tag" content="Engram">
@@ -88,7 +88,7 @@
 
   
 
-  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","display_overflow":"scroll","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-mml-chtml.js","integrity":"sha256-ihPtDDm7pTmSF9ViEsItlvsrBTsNkz0MOXMchzOwCQw="}}</script>
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","display_overflow":"scroll","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-mml-chtml.js","integrity":"sha256-ihPtDDm7pTmSF9ViEsItlvsrBTsNkz0MOXMchzOwCQw="}}</script>
 <script src="/js/third-party/math/mathjax.js" defer></script>
 
 
@@ -295,7 +295,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-11-16 11:56:28" itemprop="dateModified" datetime="2026-11-16T11:56:28+08:00">2026-11-16</time>
+      <time title="修改时间：2026-11-16 15:08:56" itemprop="dateModified" datetime="2026-11-16T15:08:56+08:00">2026-11-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -328,7 +328,7 @@
 <p>本文由三部分整合而成：<strong>课堂笔记正文</strong>（讲解体 + 知识地图 + 时间索引深链）、<strong>附录A 概念表</strong>（可勾选掌握状态复习）、<strong>附录B 课程自测</strong>（7 道面试速答题）。来源视频见正文引语块。</p>
 </blockquote>
 <blockquote>
-<p>核心主线：Engram 不是凭空出现的新架构——它把 Memory 支线的「FFN 即键值记忆、稀疏化、查表」与 N-gram 支线的「相邻词组合近似语言」合流，用 hash 查表把常识性知识检索从逐层计算变成 O(1) 查表。<br>本讲目标：读完你能回答「Transformer 为什么靠计算做知识检索、Engram 如何把它变成查表」「Memory 与 N-gram 两条支线各贡献了哪些思想」「MoE 和 Engram 为什么互补、算力怎么分」<br>课程来源：DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（B站 BV1x3zWB6EU6，UP主：EZ-Encoder，约 62 分钟）</p>
+<p>核心主线：Engram 不是凭空出现的新架构——它把 Memory 支线的「FFN 即键值记忆、稀疏化、查表」与 N-gram 支线的「相邻词组合近似语言」合流，用 hash 查表把常识性知识检索从逐层计算变成 $O(1)$ 查表。<br>本讲目标：读完你能回答「Transformer 为什么靠计算做知识检索、Engram 如何把它变成查表」「Memory 与 N-gram 两条支线各贡献了哪些思想」「MoE 和 Engram 为什么互补、算力怎么分」<br>课程来源：DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（B站 BV1x3zWB6EU6，UP主：EZ-Encoder，约 62 分钟）</p>
 </blockquote>
 <h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
 <li><a href="#1-engram-%E6%83%B3%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98">1. Engram 想解决什么问题</a></li>
@@ -365,8 +365,8 @@
 <p><strong>记住这个就够了</strong>：DeepSeek 全系列的核心思想是 Sparsity，目的是绕开 Performance&#x2F;Compute&#x2F;Size 的不可能三角继续 scale up；Engram 是这条主线在 MLP 一侧的最新落子。</p>
 </blockquote>
 <hr>
-<h2 id="2-九九乘法表类比"><a href="#2-九九乘法表类比" class="headerlink" title="2. 九九乘法表类比"></a>2. 九九乘法表类比</h2><p>人计算 324×78 这样的多位数乘法时靠两种能力：一是九九乘法表，小学就背下来了，遇到 4×8 直接说出 32——这是存在 <strong>Memory</strong> 里的知识；二是进位、先算哪一位再算哪一位这些规则——这是 <strong>Reasoning</strong>。</p>
-<p>现在的 Transformer 架构恰恰缺了 Memory 这一半。它像一个没背乘法表的人：遇到 4×8 只能现场算 8+8+8+8。凡是本可以查表的简单操作都要重新计算一遍，浪费大量计算资源。</p>
+<h2 id="2-九九乘法表类比"><a href="#2-九九乘法表类比" class="headerlink" title="2. 九九乘法表类比"></a>2. 九九乘法表类比</h2><p>人计算 $324 \times 78$ 这样的多位数乘法时靠两种能力：一是九九乘法表，小学就背下来了，遇到 $4 \times 8$ 直接说出 32——这是存在 <strong>Memory</strong> 里的知识；二是进位、先算哪一位再算哪一位这些规则——这是 <strong>Reasoning</strong>。</p>
+<p>现在的 Transformer 架构恰恰缺了 Memory 这一半。它像一个没背乘法表的人：遇到 $4 \times 8$ 只能现场算 $8+8+8+8$。凡是本可以查表的简单操作都要重新计算一遍，浪费大量计算资源。</p>
 <p>Engram 的做法：把这类 knowledge 做成一个巨大的 Embedding 表放进模型，需要时直接查。<strong>打个比方：</strong> 这等于给模型发了一张九九乘法表小抄，模型需要时就去小抄里查，而不是每次现推。有了背景知识之后再看这篇论文，会发现核心思想就是这么简单。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：Engram 的核心思想 &#x3D; 让模型对静态知识从「每次现算」变成「直接查表」，把算力省下来留给真正的推理。</p>
@@ -416,7 +416,7 @@
 <li><strong>Bag of words</strong>：不考虑条件概率，把每个词当独立出现，只数词频。代价是 “dog bites man” 和 “man bites dog” 结果完全一样——词与词之间的语序关系被忽略了</li>
 <li><strong>N-gram</strong>：不完全忽略语序，但也不看整句，只看最相邻的前一个（或前几个）词，即马尔可夫假设——把原始条件概率近似成「只看最后一个词和 blue 之间关系」的 2-gram 条件概率</li>
 </ul>
-<p>具体用法就是建一张计数表：数出语料里各种 n-gram 的出现次数，按总次数做 normalization 得到概率。比如 P(i want)&#x3D;0.33 很大，P(i to)&#x3D;0 即没有这种搭配，P(i eat) 出现了但概率较小。有了表，实际用的时候直接<strong>查表</strong>——这和 DeepSeek Engram 的思想非常像，区别只在于 Engram 的表里存的不是简单的 probability 而是 vector，好处是把 n-gram 映射进了语义空间（word2vec 的思想）。</p>
+<p>具体用法就是建一张计数表：数出语料里各种 n-gram 的出现次数，按总次数做 normalization 得到概率。比如 $P(\text{i want})&#x3D;0.33$ 很大，$P(\text{i to})&#x3D;0$ 即没有这种搭配，$P(\text{i eat})$ 出现了但概率较小。有了表，实际用的时候直接<strong>查表</strong>——这和 DeepSeek Engram 的思想非常像，区别只在于 Engram 的表里存的不是简单的 probability 而是 vector，好处是把 n-gram 映射进了语义空间（word2vec 的思想）。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：N-gram 用马尔可夫假设把高维条件概率问题变得可解，产物天然就是一张「建表 + 查表」的概率表——这是 Engram 基因的另一半。</p>
 </blockquote>
@@ -425,11 +425,11 @@
 <p>以 bigram（两个 token）为例，整体流程：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">token → embedding lookup → vector quantization 得到 codebook id → 相邻 id 组合成 bigram id → hash 查表取 bigram embedding → 与 unigram embedding concatenate 输出</span><br></pre></td></tr></table></figure>
 
-<p>第一道坎是<strong>词表爆炸</strong>：unigram 词表大小是 V 的话，bigram 词表就是 V²。原始词表 32000，bigram 就是约 10 亿（billion 级），没法做。作者的解法是<strong>codebook 降维</strong>：对 token embedding 做 k-means clustering，聚成 4096 个类，每个 cluster 就是 codebook 里的一个 vector——直观上就是把语义相似的 token 聚到一起用一个 id 表示。词表从 32000 压到 4096 后，bigram 词表变成 4096²≈1600 万（16 million），量级可以接受了。组合方式也简单：把相邻两个 token 离散化后的 codebook id 拼在一起，就是一个新的 bigram id。</p>
-<p>第二道坎是<strong>大表查询慢</strong>：1600 万行的 embedding 表，逐行找太慢。解法是 <strong>hash</strong>：hash 查询的算法复杂度是 O(1)，具体 hash function 就是对随机质数取模，非常常规。最后把查到的 bigram embedding 和最初的 unigram embedding <strong>concatenate</strong> 起来，输出既含原始 unigram 信息也含 bigram 信息。值得强调：这里的 bigram embedding 是 <strong>trainable</strong> 的——这一点和 DeepSeek Engram 完全一样。</p>
+<p>第一道坎是<strong>词表爆炸</strong>：unigram 词表大小是 $V$ 的话，bigram 词表就是 $V^2$。原始词表 32000，bigram 就是约 10 亿（billion 级），没法做。作者的解法是<strong>codebook 降维</strong>：对 token embedding 做 k-means clustering，聚成 4096 个类，每个 cluster 就是 codebook 里的一个 vector——直观上就是把语义相似的 token 聚到一起用一个 id 表示。词表从 32000 压到 4096 后，bigram 词表变成 $4096^2$≈1600 万（16 million），量级可以接受了。组合方式也简单：把相邻两个 token 离散化后的 codebook id 拼在一起，就是一个新的 bigram id。</p>
+<p>第二道坎是<strong>大表查询慢</strong>：1600 万行的 embedding 表，逐行找太慢。解法是 <strong>hash</strong>：hash 查询的算法复杂度是 $O(1)$，具体 hash function 就是对随机质数取模，非常常规。最后把查到的 bigram embedding 和最初的 unigram embedding <strong>concatenate</strong> 起来，输出既含原始 unigram 信息也含 bigram 信息。值得强调：这里的 bigram embedding 是 <strong>trainable</strong> 的——这一点和 DeepSeek Engram 完全一样。</p>
 <p><img src="/images/engram/p01_s8_ngrammer.png" alt="N-Grammer bigram embedding 生成与 hash 查表流程"></p>
 <blockquote>
-<p><strong>记住这个就够了</strong>：N-Grammer &#x3D; codebook 聚类降维解决 n-gram 词表爆炸 + hash 实现 O(1) 查大表 + 与 unigram embedding 拼接；这两板斧 Engram 全都接了过去。</p>
+<p><strong>记住这个就够了</strong>：N-Grammer &#x3D; codebook 聚类降维解决 n-gram 词表爆炸 + hash 实现 $O(1)$ 查大表 + 与 unigram embedding 拼接；这两板斧 Engram 全都接了过去。</p>
 </blockquote>
 <hr>
 <h2 id="9-方法论插曲：化简为繁与化繁为简"><a href="#9-方法论插曲：化简为繁与化繁为简" class="headerlink" title="9. 方法论插曲：化简为繁与化繁为简"></a>9. 方法论插曲：化简为繁与化繁为简</h2><p>讲者在这里做了一个思想实验，回应「科研思路从哪来」：假设有时光机回到 2022 年 N-Grammer 刚发表时，我们能不能自然想到 Engram 的想法？前提是两条：第一，对相关领域的 background 要非常熟——不必知道每篇论文的细节，但每个 idea 以及 idea 之间的关系要熟到成为大脑里的 memory，遇到相关问题立刻激活对应的知识图；第二，批判地读论文——看完除了拍手称好或大骂垃圾，还要想它能不能改进。改进的基本思路有两个方向：</p>
@@ -449,27 +449,27 @@
 <p><strong>记住这个就够了</strong>：f-gram &#x3D; 只把高频 n-gram 放进表里；embedding 表可预计算、可 offload——这两点一个指向 Engram 的工程形态，一个指向讲者后文提出的改进方向。</p>
 </blockquote>
 <hr>
-<h2 id="11-Engram-架构：用查表实现条件记忆"><a href="#11-Engram-架构：用查表实现条件记忆" class="headerlink" title="11. Engram 架构：用查表实现条件记忆"></a>11. Engram 架构：用查表实现条件记忆</h2><p>回到正题。Engram 论文的 motivation：给 Transformer 这样的模型建立一个 <strong>conditional memory（条件记忆）</strong>，用 n-gram embedding 实现，并使用各种 lookup 机制让查找在 O(1) 复杂度内完成。这里有个重要的概念区分：现在的大语言模型其实在做两件事——<strong>Reasoning</strong> 和 <strong>Knowledge Retrieval</strong>。而现有架构里知识检索仍要靠计算（simulating retrieval through computation），就像不背九九乘法表的人连简单乘法都要现推。</p>
-<p>架构图一看就能和前面的 Memory 工作联系起来：这就是一个 memory layer，只是插的位置不同——Google 是把 embedding layer 插在模型前端，DeepSeek 放在这个位置，也可以理解为 Google 那个 embedding layer 的变种。Engram layer 做的事就是 n-gram 查表，用了 <strong>2-gram 和 3-gram 的结合</strong>（讲者认为把二者合到一起是这篇论文相对新颖的点）：给定输入，既查它对应的 2-gram 也查 3-gram，全部用 hash function 查，速度约 O(1)；查到的 embedding 直接 concatenate，然后进入 gating。</p>
+<h2 id="11-Engram-架构：用查表实现条件记忆"><a href="#11-Engram-架构：用查表实现条件记忆" class="headerlink" title="11. Engram 架构：用查表实现条件记忆"></a>11. Engram 架构：用查表实现条件记忆</h2><p>回到正题。Engram 论文的 motivation：给 Transformer 这样的模型建立一个 <strong>conditional memory（条件记忆）</strong>，用 n-gram embedding 实现，并使用各种 lookup 机制让查找在 $O(1)$ 复杂度内完成。这里有个重要的概念区分：现在的大语言模型其实在做两件事——<strong>Reasoning</strong> 和 <strong>Knowledge Retrieval</strong>。而现有架构里知识检索仍要靠计算（simulating retrieval through computation），就像不背九九乘法表的人连简单乘法都要现推。</p>
+<p>架构图一看就能和前面的 Memory 工作联系起来：这就是一个 memory layer，只是插的位置不同——Google 是把 embedding layer 插在模型前端，DeepSeek 放在这个位置，也可以理解为 Google 那个 embedding layer 的变种。Engram layer 做的事就是 n-gram 查表，用了 <strong>2-gram 和 3-gram 的结合</strong>（讲者认为把二者合到一起是这篇论文相对新颖的点）：给定输入，既查它对应的 2-gram 也查 3-gram，全部用 hash function 查，速度约 $O(1)$；查到的 embedding 直接 concatenate，然后进入 gating。</p>
 <p><img src="/images/engram/p01_s11_engram-arch.png" alt="Engram 模块架构：2-gram/3-gram hash 查表 + gating"></p>
-<p>gating 部分是一个类似 attention 的结构：查出来的 embedding 经过两个 linear projection，一个的输出当 <strong>value</strong>，另一个当 <strong>key</strong>，原始输入当 <strong>query</strong>；scaled dot product 算出一个 <strong>alpha</strong>，就是门控值；alpha 和 value 相乘，控制多少 n-gram 信息进入输出——alpha 越大，进入的信息越多。最后还加了一个 convolution，讲者认为起 smoothing 或 fusion 作用，但作者自己的 ablation study 也说了这个 convolution 有没有影响不大，不是关键。为避免 hash 常见的 <strong>collision</strong>，用了多个不同的 hash function——这是 hash 的常用做法。整套设计正是 sparsity 思想的又一次落地：查表引入大量参数，计算量却很小。</p>
+<p>gating 部分是一个类似 attention 的结构：查出来的 embedding 经过两个 linear projection，一个的输出当 <strong>value</strong>，另一个当 <strong>key</strong>，原始输入当 <strong>query</strong>；scaled dot product 算出一个 **$\alpha$**，就是门控值；$\alpha$ 和 value 相乘，控制多少 n-gram 信息进入输出——$\alpha$ 越大，进入的信息越多。最后还加了一个 convolution，讲者认为起 smoothing 或 fusion 作用，但作者自己的 ablation study 也说了这个 convolution 有没有影响不大，不是关键。为避免 hash 常见的 <strong>collision</strong>，用了多个不同的 hash function——这是 hash 的常用做法。整套设计正是 sparsity 思想的又一次落地：查表引入大量参数，计算量却很小。</p>
 <p>训练与推理的形态不同：training 时巨大的 embedding table 在不同 GPU 之间 share；inference 时可以 <strong>offload 到 CPU memory</strong>。DeepSeek 还由此提出 <strong>memory hierarchy（记忆层级）</strong> 分层机制：常见的 n-gram 放比较快的内存，不常见的放比较慢的内存。</p>
 <p>和前序工作对照着看：n-gram lookup + gating 把 local dependencies（固定搭配）直接提取出来，网络不再需要对这些固定搭配做 key-value 式的计算；还记得概念深度那篇论文说复杂观念要到很深的层才能学会吗——这种方式恰好避免了那个问题。</p>
 <blockquote>
-<p><strong>记住这个就够了</strong>：Engram &#x3D; 2-gram&#x2F;3-gram 多头 hash 查表 + attention 式 gating 控制信息量；把知识检索从逐层计算变成 O(1) 查表，训练时跨 GPU 共享大表、推理时可 offload 到 CPU 并按冷热分层。</p>
+<p><strong>记住这个就够了</strong>：Engram &#x3D; 2-gram&#x2F;3-gram 多头 hash 查表 + attention 式 gating 控制信息量；把知识检索从逐层计算变成 $O(1)$ 查表，训练时跨 GPU 共享大表、推理时可 offload 到 CPU 并按冷热分层。</p>
 </blockquote>
 <hr>
 <h2 id="12-工程细节：tokenizer-压缩与多头-hash"><a href="#12-工程细节：tokenizer-压缩与多头-hash" class="headerlink" title="12. 工程细节：tokenizer 压缩与多头 hash"></a>12. 工程细节：tokenizer 压缩与多头 hash</h2><p>第一个细节是 <strong>tokenizer compression（词表压缩）</strong>：原始 tokenizer 会把不同大小写、不同拼写形态的 token 当成不同 token；DeepSeek 把它们统一成一个——各种各样的 a 都归成 a，各种各样的 o 都归成 o，从而压缩 tokenizer。对比 N-Grammer 用 codebook（k-means 聚类）做压缩，DeepSeek 用了更简单的规则方法，但目的完全一样：让 vocabulary size 更小，后面算 n-gram 时相对容易——这正是第 9 节方法论里「化繁为简」的实例。</p>
 <p>第二个细节是查表：DeepSeek 沿用前人思想做 hash，为避免 collision 用了 <strong>multi-head 的 hash n-gram</strong>，且每一路的 hash 方式就是非常简单的<strong>异或</strong>。和 PKM 的 product key 切分查询不同，这里直接对离散的 n-gram 做 hash 定位，更简单也更快。</p>
-<p>第三个细节是 gating 的可视化证据：论文用热力图展示 gating 里的 alpha，红色越深表示 alpha 越大（看的时候要把前面的 token 和后面一系列 n-gram 连起来看）。结果是 gating 确实学出了大量固定搭配：英文里的 Diana 与 the princess of Wales；中文里的「四大」与「发明」、「造纸」与「术」、「指南」与「针」、「印刷」与「术」、人名「仲景」与「张」。</p>
-<p><img src="/images/engram/p01_s12_gating-heatmap.png" alt="Gating alpha 热力图：模型学出的固定搭配">有了 n-gram lookup 和 gating，网络就不需要再对这些固定搭配做前面 key-value memory 里那种计算了。</p>
+<p>第三个细节是 gating 的可视化证据：论文用热力图展示 gating 里的 $\alpha$，红色越深表示 $\alpha$ 越大（看的时候要把前面的 token 和后面一系列 n-gram 连起来看）。结果是 gating 确实学出了大量固定搭配：英文里的 Diana 与 the princess of Wales；中文里的「四大」与「发明」、「造纸」与「术」、「指南」与「针」、「印刷」与「术」、人名「仲景」与「张」。</p>
+<p><img src="/images/engram/p01_s12_gating-heatmap.png" alt="Gating α 热力图：模型学出的固定搭配">有了 n-gram lookup 和 gating，网络就不需要再对这些固定搭配做前面 key-value memory 里那种计算了。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：三个工程动作服务于同一个目标——表更小（tokenizer 规则压缩替代 codebook）、查得快且无冲突（multi-head hash 异或）、用得稳（gating 学出固定搭配、过滤检索信息）。</p>
 </blockquote>
 <hr>
 <h2 id="13-实验结果：U-型分配与消融"><a href="#13-实验结果：U-型分配与消融" class="headerlink" title="13. 实验结果：U 型分配与消融"></a>13. 实验结果：U 型分配与消融</h2><p>先看 <strong>MoE 与 Engram 的算力分配</strong>。同样 compute budget 下，两者的比例呈现一条 <strong>U-shape</strong> 曲线：横坐标是 allocation 百分比，纵坐标是 validation loss（越低越好）。右端是没有 Engram layer 的纯 MoE；左端 MoE 占 40%、60% 时性能反而差；最好的区间在 MoE 占七八成、Engram 占两三成左右。这背后仍是不可能三角的变体：算力固定时，MoE 和 Engram 抢的是同一份 sparsity 预算。作者的说法是 Engram 是 MoE 的 <strong>complement（补充）</strong>——也有一些工作提到 memory network 和 MoE 有等价之处，把 Engram 看成 memory network 的变种的话，它就是 MoE 的某种特殊形式；两者都提供 sparsity，所以存在一个分配的 sweet spot。讲者坦言对 U-shape 背后的深层原因想得不是很清楚，欢迎读者留言讨论。</p>
 <p><img src="/images/engram/p01_s13_ushape.png" alt="MoE 与 Engram 算力分配的 U 型曲线"></p>
-<p><strong>Scaling law 实验</strong>：把 Engram 的 embedding matrix 不断做大（参数达到 10 的 7 次方量级），模型性能不断提高。这类实验在 memory network 等前序工作里很多人做过——scale up external table 能有效提升 Transformer 性能，同时不引入更多 compute。</p>
+<p><strong>Scaling law 实验</strong>：把 Engram 的 embedding matrix 不断做大（参数达到 $10^7$量级），模型性能不断提高。这类实验在 memory network 等前序工作里很多人做过——scale up external table 能有效提升 Transformer 性能，同时不引入更多 compute。</p>
 <p><strong>模型对比</strong>：dense model、MoE model、Engram model 在不同任务上比，MoE 好于 dense，Engram 基本上在所有任务上超越 MoE；把 Engram 从 27B 做到 40B，性能还有进一步提高。</p>
 <p><strong>Ablation study</strong>：以带 Engram 的完整版为 100% 基准，把 Engram 模块整个去掉，看各任务性能下降多少。最右边需要 <strong>factual knowledge</strong> 的任务下降最多；其次是算法、数学类的 reasoning 任务，下降也非常多；而需要较多阅读理解、或只靠常识推理的任务下降不明显。这说明 Engram 对知识的存储和提取类任务非常关键——这和知识神经元的观察相呼应：事实性知识本来就适合定位化存储，Engram 给了它一个更直接的存放处。</p>
 <p><img src="/images/engram/p01_s13_ablation.png" alt="消融实验：去掉 Engram 后各任务性能下降"></p>
@@ -547,13 +547,13 @@ graph TD
 </tr>
 <tr>
 <td>Codebook + Hash 查表</td>
-<td>n-gram 词表爆炸（V²）与大表查询慢</td>
-<td>k-means 聚类降维词表，hash 实现 O(1) 定位</td>
+<td>n-gram 词表爆炸（$V^2$）与大表查询慢</td>
+<td>k-means 聚类降维词表，hash 实现 $O(1)$ 定位</td>
 </tr>
 <tr>
 <td>门控机制</td>
 <td>检索出的记忆信息可能有噪音</td>
-<td>用 query-key 相似度算 alpha，控制多少信息进入输出</td>
+<td>用 query-key 相似度算 $\alpha$，控制多少信息进入输出</td>
 </tr>
 <tr>
 <td>Engram</td>
@@ -595,7 +595,7 @@ graph TD
 <li>定义：把 FFN 第一层参数视为 key、第二层参数视为 value，输入做内积相似度匹配后加权提取值的记忆机制</li>
 <li>出现：第 4 节「FFN 层就是 Key-Value Memory」、第 5 节「PKM 与稀疏 Memory Layer」</li>
 <li>依赖：</li>
-<li>易混：Hash 查表——key-value memory 靠矩阵计算逐层提取，hash 查表是 O(1) 直接定位</li>
+<li>易混：Hash 查表——key-value memory 靠矩阵计算逐层提取，hash 查表是 $O(1)$ 直接定位</li>
 </ul>
 <h3 id="知识神经元"><a href="#知识神经元" class="headerlink" title="知识神经元"></a>知识神经元</h3><ul>
 <li>定义：FFN 层中与特定事实知识对应、会被特定激活的神经元（如问 Ireland 首都时激活并回答 Dublin）</li>
@@ -616,7 +616,7 @@ graph TD
 <li>易混：Hash 查表——PKM 切分向量 key 做近邻查询，Engram 直接对离散 n-gram 做 hash 定位</li>
 </ul>
 <h3 id="门控机制"><a href="#门控机制" class="headerlink" title="门控机制"></a>门控机制</h3><ul>
-<li>定义：用 query 与检索结果算出门控值 alpha，控制检索信息有多少进入输出的过滤阀门</li>
+<li>定义：用 query 与检索结果算出门控值 $\alpha$，控制检索信息有多少进入输出的过滤阀门</li>
 <li>出现：第 6 节「门控、外部记忆与 Memory 支线总结」、第 9 节「方法论插曲：化简为繁与化繁为简」、第 11 节「Engram 架构：用查表实现条件记忆」</li>
 <li>依赖：</li>
 <li>易混：MoE——路由是离散地选专家，门控是连续地过滤已检索的信息</li>
@@ -640,7 +640,7 @@ graph TD
 <li>易混：tokenizer 压缩——目的同为降词表，codebook 靠聚类训练，tokenizer 压缩靠大小写与拼写归一规则、更简单</li>
 </ul>
 <h3 id="Hash-查表"><a href="#Hash-查表" class="headerlink" title="Hash 查表"></a>Hash 查表</h3><ul>
-<li>定义：对 key 做 hash（如随机质数取模、异或）直接计算存储位置的查表方式，复杂度约 O(1)</li>
+<li>定义：对 key 做 hash（如随机质数取模、异或）直接计算存储位置的查表方式，复杂度约 $O(1)$</li>
 <li>出现：第 8 节「N-Grammer 把 N-gram 塞回 Transformer」、第 11 节「Engram 架构：用查表实现条件记忆」、第 12 节「工程细节：tokenizer 压缩与多头 hash」</li>
 <li>依赖：N-gram</li>
 <li>易混：Product Key Memory——同为高效查表，PKM 面向连续向量 key，hash 面向离散 id</li>
@@ -666,7 +666,7 @@ graph TD
 <h2 id="自测题（面试速答）"><a href="#自测题（面试速答）" class="headerlink" title="自测题（面试速答）"></a>自测题（面试速答）</h2><ol>
 <li>Dense 模型面临的不可能三角是什么？引入 sparsity 为什么能打破它？（对应：不可能三角）</li>
 </ol>
-<p><strong>答案：</strong> 不可能三角指 Performance、Compute Cost、Model Size 三者难以同时优化，想提性能就得加参数或加计算。Sparsity 把其中 Model Size 与 Compute Cost 这条边切断了：参数可以很多，但每次前向只激活或只查询其中一小部分，计算量不随参数量增长。MoE 是典型例子——expert 很多但只激活 top-k；Engram 也一样，embedding 表可以做到上百 B 参数，用的时候只是 O(1) 查表，几乎不加 FLOPs，于是 Scaling Law 可以继续往上 scale。</p>
+<p><strong>答案：</strong> 不可能三角指 Performance、Compute Cost、Model Size 三者难以同时优化，想提性能就得加参数或加计算。Sparsity 把其中 Model Size 与 Compute Cost 这条边切断了：参数可以很多，但每次前向只激活或只查询其中一小部分，计算量不随参数量增长。MoE 是典型例子——expert 很多但只激活 top-k；Engram 也一样，embedding 表可以做到上百 B 参数，用的时候只是 $O(1)$ 查表，几乎不加 FLOPs，于是 Scaling Law 可以继续往上 scale。</p>
 <ol start="2">
 <li>为什么说 Transformer 的 FFN 层本质是 key-value memory？key 和 value 分别对应什么？（对应：Key-Value Memory）</li>
 </ol>
@@ -676,17 +676,17 @@ graph TD
 </ol>
 <p><strong>答案：</strong> 它解决的是 key 空间巨大导致查询太慢的问题。做法是把原始 key 向量（如 128 维）从中切成两半，作为两套子 key；query 也同样切开，前半查第一套、后半查第二套，最后组合结果。每套子 key 只有少量可能，但两套的排列组合（外积）能表达巨大的 key 空间，因此存储和比对的 key 数目大幅减少、查询显著加速。PKM 还引入了独立 memory layer、sparse top-k 取值和 lookup 机制三大贡献，Engram 继承了查表思想，只是把 product key 换成了 hash。</p>
 <ol start="4">
-<li>N-Grammer 生成 bigram 时词表会从 V 爆炸到 V²，codebook 是怎么解决的？（对应：Codebook）</li>
+<li>N-Grammer 生成 bigram 时词表会从 $V$ 爆炸到 $V^2$，codebook 是怎么解决的？（对应：Codebook）</li>
 </ol>
-<p><strong>答案：</strong> 用 k-means 聚类对词表降维。原始 unigram 词表 32000 的话，bigram 词表是 32000²≈10 亿，不可行；N-Grammer 把 token embedding 聚成 4096 个 codebook vector，语义相似的 token 共用一个 id，词表压到 4096，bigram 词表就变成 4096²≈1600 万，可以接受。之后把相邻 token 的 codebook id 组合成 bigram id，再用对随机质数取模的 hash 做 O(1) 查表。DeepSeek 的 tokenizer 压缩目标相同但手段更简单，直接按大小写和拼写规则归并。</p>
+<p><strong>答案：</strong> 用 k-means 聚类对词表降维。原始 unigram 词表 32000 的话，bigram 词表是 $32000^2$≈10 亿，不可行；N-Grammer 把 token embedding 聚成 4096 个 codebook vector，语义相似的 token 共用一个 id，词表压到 4096，bigram 词表就变成 $4096^2$≈1600 万，可以接受。之后把相邻 token 的 codebook id 组合成 bigram id，再用对随机质数取模的 hash 做 $O(1)$ 查表。DeepSeek 的 tokenizer 压缩目标相同但手段更简单，直接按大小写和拼写规则归并。</p>
 <ol start="5">
 <li>Engram 架构中 gating 起什么作用？有什么证据说明它学到了东西？（对应：门控机制）</li>
 </ol>
-<p><strong>答案：</strong> gating 控制检索到的 n-gram 信息有多少进入输出：查出的 embedding 经两个 linear projection 得到 key 和 value，原始输入当 query，scaled dot product 算出 alpha，alpha 乘 value——alpha 越大信息进入越多，相当于给可能带噪音的检索结果加了过滤阀门。证据是论文的 alpha 热力图：红色高亮处正好是固定搭配，如 Diana 与 the princess of Wales、「四大」与「发明」、「造纸」与「术」、「仲景」与「张」。这一机制由 Meta 在 memory layer 上首先引入，Engram 直接沿用，连 activation function 都一样。</p>
+<p><strong>答案：</strong> gating 控制检索到的 n-gram 信息有多少进入输出：查出的 embedding 经两个 linear projection 得到 key 和 value，原始输入当 query，scaled dot product 算出 $\alpha$，$\alpha$ 乘 value——$\alpha$ 越大信息进入越多，相当于给可能带噪音的检索结果加了过滤阀门。证据是论文的 $\alpha$ 热力图：红色高亮处正好是固定搭配，如 Diana 与 the princess of Wales、「四大」与「发明」、「造纸」与「术」、「仲景」与「张」。这一机制由 Meta 在 memory layer 上首先引入，Engram 直接沿用，连 activation function 都一样。</p>
 <ol start="6">
 <li>Engram 的知识检索为什么比 FFN 的计算方式快？它做了哪些工程保证？（对应：Hash 查表）</li>
 </ol>
-<p><strong>答案：</strong> 因为它把「simulating retrieval through computation」换成了直接查表：FFN 方式每层都要做内积相似度计算和加权平均，而 Engram 对 2-gram&#x2F;3-gram 做 hash，复杂度约 O(1)，几乎不耗 FLOPs。工程上有三个保证：tokenizer 压缩用规则归并大小写变体缩小词表；multi-head hash n-gram 用多个不同 hash function（每路是简单异或）避免 collision；巨大的 embedding 表训练时跨 GPU 共享、推理时 offload 到 CPU memory，再按记忆层级把常见 n-gram 放快内存、不常见的放慢内存。</p>
+<p><strong>答案：</strong> 因为它把「simulating retrieval through computation」换成了直接查表：FFN 方式每层都要做内积相似度计算和加权平均，而 Engram 对 2-gram&#x2F;3-gram 做 hash，复杂度约 $O(1)$，几乎不耗 FLOPs。工程上有三个保证：tokenizer 压缩用规则归并大小写变体缩小词表；multi-head hash n-gram 用多个不同 hash function（每路是简单异或）避免 collision；巨大的 embedding 表训练时跨 GPU 共享、推理时 offload 到 CPU memory，再按记忆层级把常见 n-gram 放快内存、不常见的放慢内存。</p>
 <ol start="7">
 <li>消融实验里去掉 Engram 后哪类任务性能下降最多？这说明了什么？（对应：知识神经元）</li>
 </ol>
@@ -771,7 +771,7 @@ graph TD
 <li>第 1 集 第 5 节「PKM 与稀疏 Memory Layer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1235">▶ 20:39</a></li>
 </ul>
 </li>
-<li>易混：Hash 查表——key-value memory 靠矩阵计算逐层提取，hash 查表是 O(1) 直接定位</li>
+<li>易混：Hash 查表——key-value memory 靠矩阵计算逐层提取，hash 查表是 $O(1)$ 直接定位</li>
 <li>自测：第 1 集第 2 题</li>
 </ul>
 </li>
@@ -816,7 +816,7 @@ graph TD
 <li><p><input disabled="" type="checkbox"> 
 <strong>门控机制</strong></p>
 <ul>
-<li>定义：用 query 与检索结果算出门控值 alpha，控制检索信息有多少进入输出的过滤阀门</li>
+<li>定义：用 query 与检索结果算出门控值 $\alpha$，控制检索信息有多少进入输出的过滤阀门</li>
 <li>出现：<ul>
 <li>第 1 集 第 6 节「门控、外部记忆与 Memory 支线总结」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1550">▶ 25:54</a></li>
 <li>第 1 集 第 9 节「方法论插曲：化简为繁与化繁为简」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2501">▶ 41:45</a></li>
@@ -868,7 +868,7 @@ graph TD
 <li><p><input disabled="" type="checkbox"> 
 <strong>Hash 查表</strong></p>
 <ul>
-<li>定义：对 key 做 hash（如随机质数取模、异或）直接计算存储位置的查表方式，复杂度约 O(1)</li>
+<li>定义：对 key 做 hash（如随机质数取模、异或）直接计算存储位置的查表方式，复杂度约 $O(1)$</li>
 <li>出现：<ul>
 <li>第 1 集 第 8 节「N-Grammer 把 N-gram 塞回 Transformer」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 37:02</a></li>
 <li>第 1 集 第 11 节「Engram 架构：用查表实现条件记忆」：本文正文 · <a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2930">▶ 48:55</a></li>
@@ -924,7 +924,7 @@ graph TD
 <h3 id="全部题目（按集）"><a href="#全部题目（按集）" class="headerlink" title="全部题目（按集）"></a>全部题目（按集）</h3><h3 id="第-1-集-·-DeepSeek-Engram-论文串讲：从-Memory-Network-到-N-gram-Embedding-1"><a href="#第-1-集-·-DeepSeek-Engram-论文串讲：从-Memory-Network-到-N-gram-Embedding-1" class="headerlink" title="第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding"></a>第 1 集 · DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding</h3><ol>
 <li>Dense 模型面临的不可能三角是什么？引入 sparsity 为什么能打破它？（对应：不可能三角；第 1 集第 1 题）</li>
 </ol>
-<p><strong>答案：</strong> 不可能三角指 Performance、Compute Cost、Model Size 三者难以同时优化，想提性能就得加参数或加计算。Sparsity 把其中 Model Size 与 Compute Cost 这条边切断了：参数可以很多，但每次前向只激活或只查询其中一小部分，计算量不随参数量增长。MoE 是典型例子——expert 很多但只激活 top-k；Engram 也一样，embedding 表可以做到上百 B 参数，用的时候只是 O(1) 查表，几乎不加 FLOPs，于是 Scaling Law 可以继续往上 scale。</p>
+<p><strong>答案：</strong> 不可能三角指 Performance、Compute Cost、Model Size 三者难以同时优化，想提性能就得加参数或加计算。Sparsity 把其中 Model Size 与 Compute Cost 这条边切断了：参数可以很多，但每次前向只激活或只查询其中一小部分，计算量不随参数量增长。MoE 是典型例子——expert 很多但只激活 top-k；Engram 也一样，embedding 表可以做到上百 B 参数，用的时候只是 $O(1)$ 查表，几乎不加 FLOPs，于是 Scaling Law 可以继续往上 scale。</p>
 <p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=28">▶ 回看 00:31</a> · 本文正文</p>
 <ol start="2">
 <li>为什么说 Transformer 的 FFN 层本质是 key-value memory？key 和 value 分别对应什么？（对应：Key-Value Memory；第 1 集第 2 题）</li>
@@ -937,19 +937,19 @@ graph TD
 <p><strong>答案：</strong> 它解决的是 key 空间巨大导致查询太慢的问题。做法是把原始 key 向量（如 128 维）从中切成两半，作为两套子 key；query 也同样切开，前半查第一套、后半查第二套，最后组合结果。每套子 key 只有少量可能，但两套的排列组合（外积）能表达巨大的 key 空间，因此存储和比对的 key 数目大幅减少、查询显著加速。PKM 还引入了独立 memory layer、sparse top-k 取值和 lookup 机制三大贡献，Engram 继承了查表思想，只是把 product key 换成了 hash。</p>
 <p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1235">▶ 回看 20:39</a> · 本文正文</p>
 <ol start="4">
-<li>N-Grammer 生成 bigram 时词表会从 V 爆炸到 V²，codebook 是怎么解决的？（对应：Codebook；第 1 集第 4 题）</li>
+<li>N-Grammer 生成 bigram 时词表会从 $V$ 爆炸到 $V^2$，codebook 是怎么解决的？（对应：Codebook；第 1 集第 4 题）</li>
 </ol>
-<p><strong>答案：</strong> 用 k-means 聚类对词表降维。原始 unigram 词表 32000 的话，bigram 词表是 32000²≈10 亿，不可行；N-Grammer 把 token embedding 聚成 4096 个 codebook vector，语义相似的 token 共用一个 id，词表压到 4096，bigram 词表就变成 4096²≈1600 万，可以接受。之后把相邻 token 的 codebook id 组合成 bigram id，再用对随机质数取模的 hash 做 O(1) 查表。DeepSeek 的 tokenizer 压缩目标相同但手段更简单，直接按大小写和拼写规则归并。</p>
+<p><strong>答案：</strong> 用 k-means 聚类对词表降维。原始 unigram 词表 32000 的话，bigram 词表是 $32000^2$≈10 亿，不可行；N-Grammer 把 token embedding 聚成 4096 个 codebook vector，语义相似的 token 共用一个 id，词表压到 4096，bigram 词表就变成 $4096^2$≈1600 万，可以接受。之后把相邻 token 的 codebook id 组合成 bigram id，再用对随机质数取模的 hash 做 $O(1)$ 查表。DeepSeek 的 tokenizer 压缩目标相同但手段更简单，直接按大小写和拼写规则归并。</p>
 <p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 回看 37:02</a> · 本文正文</p>
 <ol start="5">
 <li>Engram 架构中 gating 起什么作用？有什么证据说明它学到了东西？（对应：门控机制；第 1 集第 5 题）</li>
 </ol>
-<p><strong>答案：</strong> gating 控制检索到的 n-gram 信息有多少进入输出：查出的 embedding 经两个 linear projection 得到 key 和 value，原始输入当 query，scaled dot product 算出 alpha，alpha 乘 value——alpha 越大信息进入越多，相当于给可能带噪音的检索结果加了过滤阀门。证据是论文的 alpha 热力图：红色高亮处正好是固定搭配，如 Diana 与 the princess of Wales、「四大」与「发明」、「造纸」与「术」、「仲景」与「张」。这一机制由 Meta 在 memory layer 上首先引入，Engram 直接沿用，连 activation function 都一样。</p>
+<p><strong>答案：</strong> gating 控制检索到的 n-gram 信息有多少进入输出：查出的 embedding 经两个 linear projection 得到 key 和 value，原始输入当 query，scaled dot product 算出 $\alpha$，$\alpha$ 乘 value——$\alpha$ 越大信息进入越多，相当于给可能带噪音的检索结果加了过滤阀门。证据是论文的 $\alpha$ 热力图：红色高亮处正好是固定搭配，如 Diana 与 the princess of Wales、「四大」与「发明」、「造纸」与「术」、「仲景」与「张」。这一机制由 Meta 在 memory layer 上首先引入，Engram 直接沿用，连 activation function 都一样。</p>
 <p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=1550">▶ 回看 25:54</a> · 本文正文</p>
 <ol start="6">
 <li>Engram 的知识检索为什么比 FFN 的计算方式快？它做了哪些工程保证？（对应：Hash 查表；第 1 集第 6 题）</li>
 </ol>
-<p><strong>答案：</strong> 因为它把「simulating retrieval through computation」换成了直接查表：FFN 方式每层都要做内积相似度计算和加权平均，而 Engram 对 2-gram&#x2F;3-gram 做 hash，复杂度约 O(1)，几乎不耗 FLOPs。工程上有三个保证：tokenizer 压缩用规则归并大小写变体缩小词表；multi-head hash n-gram 用多个不同 hash function（每路是简单异或）避免 collision；巨大的 embedding 表训练时跨 GPU 共享、推理时 offload 到 CPU memory，再按记忆层级把常见 n-gram 放快内存、不常见的放慢内存。</p>
+<p><strong>答案：</strong> 因为它把「simulating retrieval through computation」换成了直接查表：FFN 方式每层都要做内积相似度计算和加权平均，而 Engram 对 2-gram&#x2F;3-gram 做 hash，复杂度约 $O(1)$，几乎不耗 FLOPs。工程上有三个保证：tokenizer 压缩用规则归并大小写变体缩小词表；multi-head hash n-gram 用多个不同 hash function（每路是简单异或）避免 collision；巨大的 embedding 表训练时跨 GPU 共享、推理时 offload 到 CPU memory，再按记忆层级把常见 n-gram 放快内存、不常见的放慢内存。</p>
 <p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1x3zWB6EU6?p=1&t=2217">▶ 回看 37:02</a> · 本文正文</p>
 <ol start="7">
 <li>消融实验里去掉 Engram 后哪类任务性能下降最多？这说明了什么？（对应：知识神经元；第 1 集第 7 题）</li>
