@@ -923,7 +923,7 @@ graph LR
 
 
 3. 无约束的代价：复合映射把高速公路变成放大器把 HC 逐层展开，从第 $l$ 层到第 $L$ 层的信号传递是：
-$$x_L &#x3D; \left( \prod_{i&#x3D;1}^{L-l} \mathcal{H}{L-i}^{\mathrm{res}} \right) x_l + \sum{i&#x3D;l}^{L-1} \left( \prod_{j&#x3D;1}^{L-1-i} \mathcal{H}_{L-j}^{\mathrm{res}} \right) (\mathcal{H}_i^{\mathrm{post}})^{\top} \mathcal{F}(\mathcal{H}_i^{\mathrm{pre}} x_l, W_l)$$
+$$x_L &#x3D; \left( \prod_{i&#x3D;1}^{L-l} \mathcal{H}_{L-i}^{\mathrm{res}} \right) x_l + \sum_{i&#x3D;l}^{L-1} \left( \prod_{j&#x3D;1}^{L-1-i} \mathcal{H}_{L-j}^{\mathrm{res}} \right) (\mathcal{H}_i^{\mathrm{post}})^{\top} \mathcal{F}(\mathcal{H}_i^{\mathrm{pre}} x_l, W_l)$$
 对比第 1 节的 telescoping 形式会发现：残差通路前面的系数从单位阵 $I$ 变成了一串矩阵的连乘 $\prod \mathcal{H}^{\mathrm{res}}$。**恒等映射还在不在，全看这个连乘是否接近 $I$**——而 $\mathcal{H}^{\mathrm{res}}$ 是无约束的可学习矩阵，没有任何力量保证它「不放大不缩小」。
 把每层放大倍数想成一个略大于 1 的数 $\lambda$：单层无所谓，$L$ 层复合就是 $\lambda^L$ 的指数效应。论文用 Amax Gain Magnitude 度量这种偏离：取复合映射行和的最大绝对值刻画前向最坏扩张、列和的最大绝对值刻画反向传播——HC 里该指标能飙到 3000，意味着信号从第一层走到最后一层被放大三千倍；训练曲线上 HC 在约 12k 步处损失激增、梯度范数剧烈震荡，正是复合映射失控的指纹。
 第二个代价是内存带宽。加宽残差流后，每个 token 的读写量从残差连接的 $2C$&#x2F;$C$ 涨到：
@@ -934,7 +934,7 @@ $$\text{Read} &#x3D; (5n+1)C + n^2 + 2n, \qquad \text{Write} &#x3D; (3n+1)C + n^
 
 
 4. mHC 的解法：把连接矩阵投影到 Birkhoff 多面体mHC（Manifold-Constrained HC）的直觉一句话：既然无约束的 $\mathcal{H}^{\mathrm{res}}$ 像混乱的水流，就把它限制在一条规则的「河道」里——这条河道是双随机矩阵流形，即 Birkhoff 多面体 $\mathcal{M}^{\mathrm{res}}$。投影后的连接矩阵必须同时满足三个条件：
-$$\mathcal{P}_{\mathcal{M}^{\mathrm{res}}}(\mathcal{H}_l^{\mathrm{res}}) :&#x3D; \left{ \mathcal{H}_l^{\mathrm{res}} \in \mathbb{R}^{n \times n} ;\middle|; \mathcal{H}_l^{\mathrm{res}} \mathbf{1}_n &#x3D; \mathbf{1}_n,; \mathbf{1}_n^{\top} \mathcal{H}_l^{\mathrm{res}} &#x3D; \mathbf{1}_n^{\top},; \mathcal{H}_l^{\mathrm{res}} \geq 0 \right}$$
+$$\mathcal{P}_{\mathcal{M}^{\mathrm{res}}}(\mathcal{H}_l^{\mathrm{res}}) :&#x3D; \left\lbrace \mathcal{H}_l^{\mathrm{res}} \in \mathbb{R}^{n \times n} \quad\middle|\quad \mathcal{H}_l^{\mathrm{res}} \mathbf{1}_n &#x3D; \mathbf{1}_n,\quad \mathbf{1}_n^{\top} \mathcal{H}_l^{\mathrm{res}} &#x3D; \mathbf{1}_n^{\top},\quad \mathcal{H}_l^{\mathrm{res}} \geq 0 \right\rbrace$$
 即行和为 1、列和为 1、元素非负（$\mathbf{1}_n$ 是全 1 向量）。注意 $n&#x3D;1$ 时这个集合退化成标量 1——正好回到 ResNet 的恒等映射，说明 mHC 是残差连接在 $n$ 路情形下的「守恒推广」。
 为什么双随机矩阵能治病？三层保证，一层比一层深：
 
@@ -948,7 +948,7 @@ $$\mathcal{P}_{\mathcal{M}^{\mathrm{res}}}(\mathcal{H}_l^{\mathrm{res}}) :&#x3D;
 
 
 5. Sinkhorn-Knopp：20 次迭代逼近双随机流形约束定义好了，剩下的问题是：怎么让可学习的 $\mathcal{H}^{\mathrm{res}}$ 每次前向都落在流形上？答案是经典的 Sinkhorn-Knopp 迭代。先给出映射矩阵的参数化——给定第 $l$ 层输入 $x \in \mathbb{R}^{n \times C}$，展平为 $\vec{x}_l \in \mathbb{R}^{1 \times nC}$，动态部分由输入决定、静态部分是可学习偏置：
-$$\begin{cases} \vec{x}’_l &#x3D; \mathrm{RMSNorm}(\vec{x}_l) \ \tilde{\mathcal{H}}_l^{\mathrm{pre}} &#x3D; \alpha_l^{\mathrm{pre}} (\vec{x}’_l \varphi_l^{\mathrm{pre}}) + b_l^{\mathrm{pre}} \ \tilde{\mathcal{H}}_l^{\mathrm{post}} &#x3D; \alpha_l^{\mathrm{post}} (\vec{x}’_l \varphi_l^{\mathrm{post}}) + b_l^{\mathrm{post}} \ \tilde{\mathcal{H}}_l^{\mathrm{res}} &#x3D; \alpha_l^{\mathrm{res}} , \mathrm{mat}(\vec{x}’_l \varphi_l^{\mathrm{res}}) + b_l^{\mathrm{res}} \end{cases}$$
+$$\begin{cases} \vec{x}’_l &#x3D; \mathrm{RMSNorm}(\vec{x}_l) \ \tilde{\mathcal{H}}_l^{\mathrm{pre}} &#x3D; \alpha_l^{\mathrm{pre}} (\vec{x}’_l \varphi_l^{\mathrm{pre}}) + b_l^{\mathrm{pre}} \ \tilde{\mathcal{H}}_l^{\mathrm{post}} &#x3D; \alpha_l^{\mathrm{post}} (\vec{x}’_l \varphi_l^{\mathrm{post}}) + b_l^{\mathrm{post}} \ \tilde{\mathcal{H}}_l^{\mathrm{res}} &#x3D; \alpha_l^{\mathrm{res}}  \mathrm{mat}(\vec{x}’_l \varphi_l^{\mathrm{res}}) + b_l^{\mathrm{res}} \end{cases}$$
 其中 $\varphi_l^{\mathrm{res}} \in \mathbb{R}^{nC \times n^2}$、$\varphi_l^{\mathrm{pre}}, \varphi_l^{\mathrm{post}} \in \mathbb{R}^{1 \times nC}$ 是动态线性映射，$b$ 系列是静态偏置，$\mathrm{mat}(\cdot)$ 把 $1 \times n^2$ 重排成 $n \times n$。然后分头施加约束：
 $$\mathcal{H}_l^{\mathrm{pre}} &#x3D; \sigma(\tilde{\mathcal{H}}_l^{\mathrm{pre}}), \quad \mathcal{H}_l^{\mathrm{post}} &#x3D; 2\sigma(\tilde{\mathcal{H}}_l^{\mathrm{post}}), \quad \mathcal{H}_l^{\mathrm{res}} &#x3D; \mathrm{Sinkhorn\text{-}Knopp}(\tilde{\mathcal{H}}_l^{\mathrm{res}})$$
 Sinkhorn 算子分两步走：先取 $\mathbf{M}^{0} &#x3D; \exp(\tilde{\mathcal{H}}_l^{\mathrm{res}})$ 把任意实矩阵变成正矩阵（顺带保证非负），再交替做列归一化和行归一化：
