@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card8.jpg">
 <meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/engram-xhs/card9.jpg">
 <meta property="article:published_time" content="2026-11-16T06:30:00.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:43:16.570Z">
+<meta property="article:modified_time" content="2026-11-16T06:45:01.356Z">
 <meta property="article:author" content="高鸿烨">
 <meta property="article:tag" content="DeepSeek">
 <meta property="article:tag" content="Engram">
@@ -284,7 +284,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2026-11-16 14:30:00 / 修改时间：14:43:16" itemprop="dateCreated datePublished" datetime="2026-11-16T14:30:00+08:00">2026-11-16</time>
+      <time title="创建时间：2026-11-16 14:30:00 / 修改时间：14:45:01" itemprop="dateCreated datePublished" datetime="2026-11-16T14:30:00+08:00">2026-11-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -359,8 +359,8 @@
 <p><strong>记住这个就够了</strong>：架构三件套 &#x3D; 选择性插层（2&#x2F;15 层）+ 分词器压缩缩表 23% + 多头 XOR 取模哈希只为见过的组合建索引。</p>
 </blockquote>
 <hr>
-<h2 id="4-上下文感知门控与短卷积"><a href="#4-上下文感知门控与短卷积" class="headerlink" title="4. 上下文感知门控与短卷积"></a>4. 上下文感知门控与短卷积</h2><p>检索到的静态嵌入 e_t 缺乏上下文信息，可能因哈希冲突或一词多义受到噪声影响。Engram 引入了类似于注意力的门控机制：使用当前隐藏状态 h_t 作为 Query，以检索到的存储 e_t 作为 Key 和 Value——$k_t &#x3D; W_k e_t$，$v_t &#x3D; W_v e_t$，其中 $W_k$、$W_v$ 是可学习投影矩阵；标量门控为<br>$$\alpha_t &#x3D; \sigma!\left( \frac{\mathrm{RMSNorm}(h_t)^{\top} \mathrm{RMSNorm}(k_t)}{\sqrt{d}} \right)$$。门控输出为 $\bar{v}_t &#x3D; \alpha_t \cdot v_t$：这种设计确保了当检索内容与上下文矛盾时，门控会趋于零，从而抑制噪声，确保只有对当前有用的知识才能进入 backbone 网络。</p>
-<p>但 Engram 检索到的知识是一个个孤立的「词条」，彼此之间没有交互。为了扩展感受野并增强模型的非线性，引入了一个 <strong>short, depthwise causal convolution</strong>，把检索到的知识更好地与上下文融合，使得每个 token 都能与其他 token 的信息交互：令 V̄ 表示门控值序列，卷积核大小 $w&#x3D;4$、膨胀率 $\delta&#x3D;N$、SiLU 激活，最终输出<br>$$Y &#x3D; \mathrm{SiLU}!\left(\mathrm{Conv1D}(\mathrm{RMSNorm}(\bar{V}))\right) + \bar{V}$$<br>再通过残差连接集成到 backbone：$H^{(\ell)} \leftarrow H^{(\ell)} + Y$。</p>
+<h2 id="4-上下文感知门控与短卷积"><a href="#4-上下文感知门控与短卷积" class="headerlink" title="4. 上下文感知门控与短卷积"></a>4. 上下文感知门控与短卷积</h2><p>检索到的静态嵌入 e_t 缺乏上下文信息，可能因哈希冲突或一词多义受到噪声影响。Engram 引入了类似于注意力的门控机制：使用当前隐藏状态 h_t 作为 Query，以检索到的存储 e_t 作为 Key 和 Value——$k_t &#x3D; W_k e_t$，$v_t &#x3D; W_v e_t$，其中 $W_k$、$W_v$ 是可学习投影矩阵；标量门控为<br>$$\alpha_t &#x3D; \sigma\left( \frac{\mathrm{RMSNorm}(h_t)^{\top} \mathrm{RMSNorm}(k_t)}{\sqrt{d}} \right)$$。门控输出为 $\bar{v}_t &#x3D; \alpha_t \cdot v_t$：这种设计确保了当检索内容与上下文矛盾时，门控会趋于零，从而抑制噪声，确保只有对当前有用的知识才能进入 backbone 网络。</p>
+<p>但 Engram 检索到的知识是一个个孤立的「词条」，彼此之间没有交互。为了扩展感受野并增强模型的非线性，引入了一个 <strong>short, depthwise causal convolution</strong>，把检索到的知识更好地与上下文融合，使得每个 token 都能与其他 token 的信息交互：令 V̄ 表示门控值序列，卷积核大小 $w&#x3D;4$、膨胀率 $\delta&#x3D;N$、SiLU 激活，最终输出<br>$$Y &#x3D; \mathrm{SiLU}\left(\mathrm{Conv1D}(\mathrm{RMSNorm}(\bar{V}))\right) + \bar{V}$$<br>再通过残差连接集成到 backbone：$H^{(\ell)} \leftarrow H^{(\ell)} + Y$。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：门控用「当前上下文 vs 检索结果」的相似度决定放行多少；短卷积把孤立词条揉进上下文，残差挂回主干。</p>
 </blockquote>
@@ -369,7 +369,7 @@
 <p>参数共享在效率和表达力之间取平衡：</p>
 <ul>
 <li><strong>共享部分</strong>：所有分支共享同一个<strong>稀疏嵌入表</strong>和<strong>值投影矩阵 $W_V$</strong></li>
-<li><strong>独立部分</strong>：每个分支拥有独立的**键投影矩阵 $W_K^{(m)}$**，其门控信号为<br>$$\alpha_t^{(m)} &#x3D; \sigma!\left( \frac{\mathrm{RMSNorm}(h_t^{(m)})^{\top} \mathrm{RMSNorm}(W_K^{(m)} e_t)}{\sqrt{d}} \right)$$</li>
+<li><strong>独立部分</strong>：每个分支拥有独立的**键投影矩阵 $W_K^{(m)}$**，其门控信号为<br>$$\alpha_t^{(m)} &#x3D; \sigma\left( \frac{\mathrm{RMSNorm}(h_t^{(m)})^{\top} \mathrm{RMSNorm}(W_K^{(m)} e_t)}{\sqrt{d}} \right)$$</li>
 </ul>
 <p>计算效率上，门控输出 $u_t^{(m)} &#x3D; \alpha_t^{(m)} \cdot (W_V e_t)$，这种设计允许把所有的线性投影融合为一个<strong>稠密 FP8 矩阵乘法</strong>，从而最大化现代 GPU 的计算利用率。</p>
 <blockquote>
@@ -387,7 +387,7 @@
 <p><strong>记住这个就够了</strong>：索引只取决于输入 ID → 可预知 → 可异步预取；100B 的表卸到 CPU 内存，吞吐量损耗低于 3%。</p>
 </blockquote>
 <hr>
-<h2 id="7-实验：U-型配比、有效深度与谁依赖-Engram"><a href="#7-实验：U-型配比、有效深度与谁依赖-Engram" class="headerlink" title="7. 实验：U 型配比、有效深度与谁依赖 Engram"></a>7. 实验：U 型配比、有效深度与谁依赖 Engram</h2><p><strong>资源配比的 U 型 Scaling Law</strong>：MoE 计算与 Engram 记忆之间的配比遵循 U 形曲线——实验证明将约 <strong>20%-25%</strong> 的稀疏参数分配给 Engram 时整体性能最佳。定义分配比例 $\rho$：$\rho&#x3D;1$ 表示纯 MoE 模型，$\rho&#x3D;0$ 表示纯 Engram 模型（此时模型失去计算能力）；损失与 ρ 呈 U 型关系，最优通常在 $\rho \approx 75%\text{–}80%$ 之间。而在参数无限的情况下，<strong>embedding 参数量与损失呈幂律关系</strong>（对数线性趋势），增加 embedding 参数量能持续降低模型损失而不增加计算开销；混合模型比纯 MoE 模型更优。</p>
+<h2 id="7-实验：U-型配比、有效深度与谁依赖-Engram"><a href="#7-实验：U-型配比、有效深度与谁依赖-Engram" class="headerlink" title="7. 实验：U 型配比、有效深度与谁依赖 Engram"></a>7. 实验：U 型配比、有效深度与谁依赖 Engram</h2><p><strong>资源配比的 U 型 Scaling Law</strong>：MoE 计算与 Engram 记忆之间的配比遵循 U 形曲线——实验证明将约 <strong>20%-25%</strong> 的稀疏参数分配给 Engram 时整体性能最佳。定义分配比例 $\rho$：$\rho&#x3D;1$ 表示纯 MoE 模型，$\rho&#x3D;0$ 表示纯 Engram 模型（此时模型失去计算能力）；损失与 ρ 呈 U 型关系，最优通常在 $\rho \approx 0.75 \sim 0.80$ 之间。而在参数无限的情况下，<strong>embedding 参数量与损失呈幂律关系</strong>（对数线性趋势），增加 embedding 参数量能持续降低模型损失而不增加计算开销；混合模型比纯 MoE 模型更优。</p>
 <p><strong>全方位的性能提升</strong>：知识密集型任务上 Engram-27B 在 MMLU（+3.0）和 CMMLU（+4.0）表现优异，符合其增强知识存储能力的预期；令人惊讶的是<strong>通用推理、代码与数学</strong>等非知识型任务也有明显提升——引入专门的知识查找提高了表征效率，释放了 backbone 处理复杂逻辑的能力；<strong>上下文能力</strong>上，把局部依赖（固定短语、实体名）交给 Engram 后，注意力机制保留了宝贵的计算容量，更专注于管理全局上下文。</p>
 <p><strong>增加有效深度</strong>：Engram 减轻了早期层在<strong>重建静态特征</strong>上的负担，功能上等同于增加模型深度。LogitLens 计算中间层隐藏状态与最终输出分布的 KL 散度，Engram 模型在早期层 KL 散度明显更小——模型<strong>更快地完成了特征组合</strong>，表示更早进入「预测就绪」状态；<strong>CKA（Centered Kernel Alignment）</strong> 比较表征结构，虚线明显上移——Engram-27B 的第 5 层表示与 MoE 基线的第 12 层最接近，说明 Engram 在较早层实现了更深层次的表征。</p>
 <p><strong>插入层与组件消融</strong>：关于在何处注入存储，论文揭示了关键的<strong>放置权衡（Placement Trade-off）</strong>——尽早卸载局部模式重建符合分层处理直觉，但此时隐藏状态缺乏足够的全局上下文，会导致门控精度下降。实验证明<strong>第 2 层是单层插入的最佳位置</strong>；而<strong>分层设计</strong>（如同时在第 2 层和第 6 层插入两个更小的 Engram 模块）效果更佳，结合了早期干预和后期精准门控的优势。关键组件消融中，<strong>mHC、上下文感知门控和分词器压缩</strong>是提升性能最关键的三个组件。</p>
