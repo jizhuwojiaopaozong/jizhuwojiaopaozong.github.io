@@ -1,24 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2026/11/15/hello-world/</url>
-    <content><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick StartCreate a new post$ hexo new &quot;My New Post&quot;
-
-More info: Writing
-Run server$ hexo server
-
-More info: Server
-Generate static files$ hexo generate
-
-More info: Generating
-Deploy to remote sites$ hexo deploy
-
-More info: Deployment
-]]></content>
-  </entry>
-  <entry>
     <title>DeepSeek Engram 论文串讲：从 Memory Network 到 N-gram Embedding（课堂笔记 + 概念表 + 自测）</title>
     <url>/2026/11/15/deepseek-engram-from-memory-network-to-n-gram-embedding/</url>
     <content><![CDATA[
@@ -686,8 +668,8 @@ Engram 的知识检索为什么比 FFN 的计算方式快？它做了哪些工�
 自测题（面试速答）
 
 
-1. 溯源：N-gram 为什么是 LLM 的高效外挂先对齐粒度：在大模型语境下，一个 Gram 就是一个 Token，N-gram 的 N 是参与计算的连续 Token 长度。以「中国的首都是北京」为例，分词结果是 [“中国”, “的”, “首都”, “是”, “北京”]：2-gram 统计连续 2 个 Token 的出现概率，存条件概率 P(w_t|w_{t-1})——输入当前 Token「首都」时，查表发现后面接「是」的频次极高；3-gram 根据前 2 个 Token 预测第 3 个，存 P(w_t|w_{t-1}, w_{t-2})——窗口滑到「中国的首都」时，查表可以直接锁定下一个 Token。
-N-gram 的优势在于确定性带来的极致效率：检索索引仅取决于输入 Token 序列，查询复杂度 O(1)。但它的问题也显而易见：参数空间呈指数级爆炸且极其稀疏——对 DeepSeek 使用的 128k 词表模型，Bigram 的理论组合空间高达 163 亿（12.8 万的平方），Trigram 更是天文数字。
+1. 溯源：N-gram 为什么是 LLM 的高效外挂先对齐粒度：在大模型语境下，一个 Gram 就是一个 Token，N-gram 的 N 是参与计算的连续 Token 长度。以「中国的首都是北京」为例，分词结果是 [“中国”, “的”, “首都”, “是”, “北京”]：2-gram 统计连续 2 个 Token 的出现概率，存条件概率 $P(w_t \mid w_{t-1})$——输入当前 Token「首都」时，查表发现后面接「是」的频次极高；3-gram 根据前 2 个 Token 预测第 3 个，存 $P(w_t \mid w_{t-1}, w_{t-2})$——窗口滑到「中国的首都」时，查表可以直接锁定下一个 Token。
+N-gram 的优势在于确定性带来的极致效率：检索索引仅取决于输入 Token 序列，查询复杂度 $O(1)$。但它的问题也显而易见：参数空间呈指数级爆炸且极其稀疏——对 DeepSeek 使用的 128k 词表模型，Bigram 的理论组合空间高达 163 亿（$(1.28\times10^5)^2$），Trigram 更是天文数字。
 而标准 Transformer 架构缺乏原生的知识检索原语，目前的 LLM 实际上被迫在数十层 Attention 和 FFN 的深度迭代中，通过昂贵的计算去模拟这种本该由查表完成的局部模式匹配。DeepSeek 敏锐地察觉到这种低效：LLM 正在消耗极其昂贵的算力去重建那些局部的、静态的、模式化的知识（命名实体、固定搭配）。既然是查表就能解决的肌肉记忆，为什么要动用深层神经网络去推导？于是 Engram 诞生了：它通过多头哈希（Multi-Head Hashing） 解决存储稀疏性，把这些静态模式从计算流中剥离，直接以条件记忆的形式外挂到 Transformer 中。
 
 记住这个就够了：N-gram 查表是 O(1) 的确定性检索，败在词表指数爆炸；Engram 用哈希把「见过的组合」装进表里，让静态知识不再占用神经网络计算。
@@ -701,21 +683,21 @@ N-gram 的优势在于确定性带来的极致效率：检索索引仅取决于�
 稀疏性分配：总参数量固定时，应该分配多少给 MoE、多少给静态记忆（Engram）
 
 为什么 Transformer 模拟检索很低效？语言模型包含两个子任务：组合推理和知识检索。前者需要深层的动态计算；而命名实体、固定搭配等模式是局部且静态的，可以通过 N-gram 捕捉这种局部依赖，把这些规律性特征转换为成本更低的查表操作。对应的，由于 Transformer 缺少知识检索机制，只能通过计算模拟检索过程，在早期层中消耗大量的注意力层和前馈网络来重建这些多 token 实体——论文举的例子是实体「Diana, Princess of Wales」：LLM 消耗很多层的计算才推理出这个实体，而这个过程本可以被替换为计算量更低的查表操作。
-Engram 的解法一句话：让条件计算（MoE）处理动态逻辑，让条件存储（Engram）负责静态检索，实现常数时间 O(1) 的知识获取。
+Engram 的解法一句话：让条件计算（MoE）处理动态逻辑，让条件存储（Engram）负责静态检索，实现常数时间 $O(1)$ 的知识获取。
 
 记住这个就够了：语言 &#x3D; 组合推理 + 知识检索；MoE 管前者、Engram 管后者，把「重建实体」的逐层计算换成查表。
 
 
 3. Engram 架构：大规模哈希检索怎么落地为了让这个外挂字典跑在大模型里，DeepSeek 做了三层设计。第一是插入位置：Engram 插入到 Transformer Block 里，但不是每个层都插入——以 Engram-27B 为例，N-gram 参数高达 5.7B，只在第 2 层和第 15 层插入该模块。早期层（第 2 层）插入是为了尽早识别静态模式、释放 backbone 的计算压力；中间层（第 15 层）插入则可以利用更丰富的上下文信息进行精细的门控控制。第二是输入与异步性：Engram 的输入包含上一层的 Hidden States 以及当前 token 序列的 Input ID，且计算只依赖于当前 token 序列——这样就可以在计算前面的 Transformer Block 时，异步地查询下一层所需的 Engram 嵌入向量。
 
-第三是把表做小、查快。哈希检索：假设词表大小为 V，Bigram 的统计表就是 V²，但实际 N-gram 组合很稀疏——一个字能组的词数量有限，为了提高查询效率，采用哈希 N-gram 检索，只为见到过的组合分配索引。分词器压缩：为提高语义密度，Engram 首先通过预计算的映射函数 P: V→V’ 把原始 Token 压缩为规范化标识符，有效词表缩小了 23%，形成 suffix N-gram（比如「Apple」和「apple」对应不同 token ID，对 N-gram 查找显得冗余）；开源代码里的 _build_lookup_table() 建立一个 key2new 映射表，用 NFKC、去重音、小写化、空格归一等 normalizer 把大小写和空格统一。
-多头哈希对付哈希冲突：两个不同输入经过哈希函数得到相同哈希值，本质是输入空间（N-gram）大于输出空间（索引空间）。数据结构课里的拉链法、开放寻址法在 GPU 中不可行——两者都会导致串行检索、效率极低。论文采用取模方式：对输入序列 t_1..t_n，哈希地址 H(t_1,…,t_n) &#x3D; (m_1t_1 ⊕ m_2t_2 ⊕ … ⊕ m_n*t_n) mod M，其中 m 是随机数、⊕ 是 XOR、M 是取模的质数。再用 K 个不同的哈希头对压缩后的 N-gram 上下文索引，每个头通过确定性函数 φ_{n,k} 把上下文映射到一个嵌入表 E_{n,k}，每层每个注意力头的每个 n-gram 都对应不同的 M。直观理解：虽然两个词在头 1 可能会发生冲突，但它们在头 2、头 3 同时发生冲突的概率极低。最终检索到的向量 e_t 由所有 N-gram 阶数（n&#x3D;2..N）和哈希头（k&#x3D;1..K）的嵌入向量拼接而成。
+第三是把表做小、查快。哈希检索：假设词表大小为 V，Bigram 的统计表就是 V²，但实际 N-gram 组合很稀疏——一个字能组的词数量有限，为了提高查询效率，采用哈希 N-gram 检索，只为见到过的组合分配索引。分词器压缩：为提高语义密度，Engram 首先通过预计算的映射函数 $\mathcal{P}: V \to V’$ 把原始 Token 压缩为规范化标识符，有效词表缩小了 23%，形成 suffix N-gram $g_{t,n} &#x3D; (x’_{t-n+1}, \dots, x’_t)$（比如「Apple」和「apple」对应不同 token ID，对 N-gram 查找显得冗余）；开源代码里的 _build_lookup_table() 建立一个 key2new 映射表，用 NFKC、去重音、小写化、空格归一等 normalizer 把大小写和空格统一。
+多头哈希对付哈希冲突：两个不同输入经过哈希函数得到相同哈希值，本质是输入空间（N-gram）大于输出空间（索引空间）。数据结构课里的拉链法、开放寻址法在 GPU 中不可行——两者都会导致串行检索、效率极低。论文采用取模方式：对输入序列 t_1..t_n，哈希地址为$$H(t_1, t_2, \dots, t_n) &#x3D; (m_1 t_1 \oplus m_2 t_2 \oplus \cdots \oplus m_n t_n) \bmod M$$其中 $m$ 是随机数、$\oplus$ 是 XOR、$M$ 是取模的质数。再用 K 个不同的哈希头对压缩后的 N-gram 上下文索引，每个头通过确定性函数 $\varphi_{n,k}$ 把上下文映射到一个嵌入表 $E_{n,k}$，每层每个注意力头的每个 n-gram 都对应不同的 M。直观理解：虽然两个词在头 1 可能会发生冲突，但它们在头 2、头 3 同时发生冲突的概率极低。最终检索到的向量 $e_t$ 由所有 N-gram 阶数与哈希头的嵌入向量拼接而成：$$e_t \triangleq \prod_{n&#x3D;2}^{N} \prod_{k&#x3D;1}^{K} e_{t,n,k}$$。
 
 记住这个就够了：架构三件套 &#x3D; 选择性插层（2&#x2F;15 层）+ 分词器压缩缩表 23% + 多头 XOR 取模哈希只为见过的组合建索引。
 
 
-4. 上下文感知门控与短卷积检索到的静态嵌入 e_t 缺乏上下文信息，可能因哈希冲突或一词多义受到噪声影响。Engram 引入了类似于注意力的门控机制：使用当前隐藏状态 h_t 作为 Query，以检索到的存储 e_t 作为 Key 和 Value——k_t &#x3D; W_k·e_t，v_t &#x3D; W_v·e_t，W_k、W_v 是可学习投影矩阵；标量门控 α_t &#x3D; σ( RMSNorm(h_t) · RMSNorm(k_t) &#x2F; √d )。门控输出为 v̄_t &#x3D; α_t · v_t：这种设计确保了当检索内容与上下文矛盾时，门控会趋于零，从而抑制噪声，确保只有对当前有用的知识才能进入 backbone 网络。
-但 Engram 检索到的知识是一个个孤立的「词条」，彼此之间没有交互。为了扩展感受野并增强模型的非线性，引入了一个 short, depthwise causal convolution，把检索到的知识更好地与上下文融合，使得每个 token 都能与其他 token 的信息交互：令 V̄ 表示门控值序列，卷积核大小 w&#x3D;4、膨胀率 δ&#x3D;N、SiLU 激活，最终输出 Y &#x3D; SiLU(Conv1D(RMSNorm(V̂))) + V̂，再通过残差连接集成到 backbone：H ← H + Y。
+4. 上下文感知门控与短卷积检索到的静态嵌入 e_t 缺乏上下文信息，可能因哈希冲突或一词多义受到噪声影响。Engram 引入了类似于注意力的门控机制：使用当前隐藏状态 h_t 作为 Query，以检索到的存储 e_t 作为 Key 和 Value——$k_t &#x3D; W_k e_t$，$v_t &#x3D; W_v e_t$，其中 $W_k$、$W_v$ 是可学习投影矩阵；标量门控为$$\alpha_t &#x3D; \sigma!\left( \frac{\mathrm{RMSNorm}(h_t)^{\top} \mathrm{RMSNorm}(k_t)}{\sqrt{d}} \right)$$。门控输出为 $\bar{v}_t &#x3D; \alpha_t \cdot v_t$：这种设计确保了当检索内容与上下文矛盾时，门控会趋于零，从而抑制噪声，确保只有对当前有用的知识才能进入 backbone 网络。
+但 Engram 检索到的知识是一个个孤立的「词条」，彼此之间没有交互。为了扩展感受野并增强模型的非线性，引入了一个 short, depthwise causal convolution，把检索到的知识更好地与上下文融合，使得每个 token 都能与其他 token 的信息交互：令 V̄ 表示门控值序列，卷积核大小 $w&#x3D;4$、膨胀率 $\delta&#x3D;N$、SiLU 激活，最终输出$$Y &#x3D; \mathrm{SiLU}!\left(\mathrm{Conv1D}(\mathrm{RMSNorm}(\bar{V}))\right) + \bar{V}$$再通过残差连接集成到 backbone：$H^{(\ell)} \leftarrow H^{(\ell)} + Y$。
 
 记住这个就够了：门控用「当前上下文 vs 检索结果」的相似度决定放行多少；短卷积把孤立词条揉进上下文，残差挂回主干。
 
@@ -723,10 +705,10 @@ Engram 的解法一句话：让条件计算（MoE）处理动态逻辑，让条�
 5. 与 mHC 结合：多分支下的参数共享为了追求更强的建模能力，Engram 默认集成在多分支架构（如 mHC）中，而不是标准的单流残差结构：mHC 将传统的残差流扩展为多个并行分支，信息流通过可学习的权重在分支间调节。Engram 本身跟模型架构无关，也可以用于标准的串行 Transformer Block。
 参数共享在效率和表达力之间取平衡：
 
-共享部分：所有分支共享同一个稀疏嵌入表和值投影矩阵 W_V
-独立部分：每个分支拥有独立的**键投影矩阵 W_K^(m)**，其门控信号 α_t^(m) &#x3D; σ( RMSNorm(h_t^(m))ᵀ · RMSNorm(W_K^(m)·e_t) &#x2F; √d )
+共享部分：所有分支共享同一个稀疏嵌入表和值投影矩阵 $W_V$
+独立部分：每个分支拥有独立的**键投影矩阵 $W_K^{(m)}$**，其门控信号为$$\alpha_t^{(m)} &#x3D; \sigma!\left( \frac{\mathrm{RMSNorm}(h_t^{(m)})^{\top} \mathrm{RMSNorm}(W_K^{(m)} e_t)}{\sqrt{d}} \right)$$
 
-计算效率上，门控输出 u_t^(m) &#x3D; α_t^(m) · (W_V·e_t)，这种设计允许把所有的线性投影融合为一个稠密 FP8 矩阵乘法，从而最大化现代 GPU 的计算利用率。
+计算效率上，门控输出 $u_t^{(m)} &#x3D; \alpha_t^{(m)} \cdot (W_V e_t)$，这种设计允许把所有的线性投影融合为一个稠密 FP8 矩阵乘法，从而最大化现代 GPU 的计算利用率。
 
 记住这个就够了：多分支下「表和值投影共享、键投影独立」，投影融合成一次 FP8 稠密矩阵乘吃满 GPU。
 
@@ -742,7 +724,7 @@ Engram 的解法一句话：让条件计算（MoE）处理动态逻辑，让条�
 记住这个就够了：索引只取决于输入 ID → 可预知 → 可异步预取；100B 的表卸到 CPU 内存，吞吐量损耗低于 3%。
 
 
-7. 实验：U 型配比、有效深度与谁依赖 Engram资源配比的 U 型 Scaling Law：MoE 计算与 Engram 记忆之间的配比遵循 U 形曲线——实验证明将约 20%-25% 的稀疏参数分配给 Engram 时整体性能最佳。定义分配比例 ρ：ρ&#x3D;1 表示纯 MoE 模型，ρ&#x3D;0 表示纯 Engram 模型（此时模型失去计算能力）；损失与 ρ 呈 U 型关系，最优通常在 ρ≈75%-80% 之间。而在参数无限的情况下，embedding 参数量与损失呈幂律关系（对数线性趋势），增加 embedding 参数量能持续降低模型损失而不增加计算开销；混合模型比纯 MoE 模型更优。
+7. 实验：U 型配比、有效深度与谁依赖 Engram资源配比的 U 型 Scaling Law：MoE 计算与 Engram 记忆之间的配比遵循 U 形曲线——实验证明将约 20%-25% 的稀疏参数分配给 Engram 时整体性能最佳。定义分配比例 $\rho$：$\rho&#x3D;1$ 表示纯 MoE 模型，$\rho&#x3D;0$ 表示纯 Engram 模型（此时模型失去计算能力）；损失与 ρ 呈 U 型关系，最优通常在 $\rho \approx 75%\text{–}80%$ 之间。而在参数无限的情况下，embedding 参数量与损失呈幂律关系（对数线性趋势），增加 embedding 参数量能持续降低模型损失而不增加计算开销；混合模型比纯 MoE 模型更优。
 全方位的性能提升：知识密集型任务上 Engram-27B 在 MMLU（+3.0）和 CMMLU（+4.0）表现优异，符合其增强知识存储能力的预期；令人惊讶的是通用推理、代码与数学等非知识型任务也有明显提升——引入专门的知识查找提高了表征效率，释放了 backbone 处理复杂逻辑的能力；上下文能力上，把局部依赖（固定短语、实体名）交给 Engram 后，注意力机制保留了宝贵的计算容量，更专注于管理全局上下文。
 增加有效深度：Engram 减轻了早期层在重建静态特征上的负担，功能上等同于增加模型深度。LogitLens 计算中间层隐藏状态与最终输出分布的 KL 散度，Engram 模型在早期层 KL 散度明显更小——模型更快地完成了特征组合，表示更早进入「预测就绪」状态；CKA（Centered Kernel Alignment） 比较表征结构，虚线明显上移——Engram-27B 的第 5 层表示与 MoE 基线的第 12 层最接近，说明 Engram 在较早层实现了更深层次的表征。
 插入层与组件消融：关于在何处注入存储，论文揭示了关键的放置权衡（Placement Trade-off）——尽早卸载局部模式重建符合分层处理直觉，但此时隐藏状态缺乏足够的全局上下文，会导致门控精度下降。实验证明第 2 层是单层插入的最佳位置；而分层设计（如同时在第 2 层和第 6 层插入两个更小的 Engram 模块）效果更佳，结合了早期干预和后期精准门控的优势。关键组件消融中，mHC、上下文感知门控和分词器压缩是提升性能最关键的三个组件。
@@ -758,7 +740,22 @@ Engram 的解法一句话：让条件计算（MoE）处理动态逻辑，让条�
 
 记住这个就够了：MoE 管计算稀疏、Engram 管存储稀疏，两者按 U 型曲线分配算力，共同构成稀疏化的两条轴。
 
-本讲知识地图graph TD  R((Engram 解读))  subgraph 定位    MOE[MoE] -.-&gt;|互补分配算力| EG[Engram]  end  subgraph 检索与降噪    EG --&gt;|K 头索引| MH[多头哈希]    EG --&gt;|门控过滤| GT[上下文感知门控]    MH -.-&gt;|冲突噪声交给| GT  end  R --&gt; EG
+本讲知识地图
+
+
+graph TD
+  R((Engram 解读))
+  subgraph 定位
+    MOE[MoE] -.-&gt;|互补分配算力| EG[Engram]
+  end
+  subgraph 检索与降噪
+    EG --&gt;|K 头索引| MH[多头哈希]
+    EG --&gt;|门控过滤| GT[上下文感知门控]
+    MH -.-&gt;|冲突噪声交给| GT
+  end
+  R --&gt; EG
+
+
 
 本讲小结
 
@@ -846,5 +843,23 @@ Engram 为什么只在第 2 层、第 15 层这类特定层插入，而不是每
         <tag>N-gram</tag>
         <tag>小红书</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2026/11/15/hello-world/</url>
+    <content><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
+Quick StartCreate a new post$ hexo new &quot;My New Post&quot;
+
+More info: Writing
+Run server$ hexo server
+
+More info: Server
+Generate static files$ hexo generate
+
+More info: Generating
+Deploy to remote sites$ hexo deploy
+
+More info: Deployment
+]]></content>
   </entry>
 </search>
