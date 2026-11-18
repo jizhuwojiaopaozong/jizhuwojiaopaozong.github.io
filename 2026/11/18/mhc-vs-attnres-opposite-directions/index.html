@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jizhuwojiaopaozong.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="对照解读 mHC 与 AttnRes：统一深度维线性注意力视角、双随机双向归一 vs softmax 单向归一、16 层消融两档增益、访存与开销工程账、GLM 与 Kimi 的落地选择">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择">
+<meta property="og:url" content="https://jizhuwojiaopaozong.github.io/2026/11/18/mhc-vs-attnres-opposite-directions/index.html">
+<meta property="og:site_name" content="Gao HongYe">
+<meta property="og:description" content="对照解读 mHC 与 AttnRes：统一深度维线性注意力视角、双随机双向归一 vs softmax 单向归一、16 层消融两档增益、访存与开销工程账、GLM 与 Kimi 的落地选择">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/attnres-xhs/card3.jpg">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/attnres-xhs/card4.jpg">
+<meta property="og:image" content="https://jizhuwojiaopaozong.github.io/images/attnres-xhs/card6.jpg">
+<meta property="article:published_time" content="2026-11-18T12:40:00.000Z">
+<meta property="article:modified_time" content="2026-11-18T12:40:23.394Z">
+<meta property="article:author" content="高鸿烨">
+<meta property="article:tag" content="DeepSeek">
+<meta property="article:tag" content="mHc">
+<meta property="article:tag" content="attnres">
+<meta property="article:tag" content="Kimi">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jizhuwojiaopaozong.github.io/images/attnres-xhs/card3.jpg">
+
+
+<link rel="canonical" href="https://jizhuwojiaopaozong.github.io/2026/11/18/mhc-vs-attnres-opposite-directions/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jizhuwojiaopaozong.github.io/2026/11/18/mhc-vs-attnres-opposite-directions/","path":"2026/11/18/mhc-vs-attnres-opposite-directions/","title":"mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择 | Gao HongYe</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/next-theme-pjax/0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/medium-zoom/1.1.0/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pangu/7.2.1/pangu.umd.js" integrity="sha256-kRsxecBnwG6mULFPe2E6UKnNm8XfDOuDwCOprjLZuX8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"/vendor/mermaid/mermaid.min.js"}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","display_overflow":"scroll","js":{"url":"/vendor/mathjax/es5/tex-mml-chtml.js"},"font_path":"/vendor/mathjax/es5/output/chtml/fonts/woff-v2/"}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Gao HongYe</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">ghy Blogs</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%90%8C%E4%B8%80%E6%9D%A1%E5%85%AC%E5%BC%8F%E8%A2%AB%E6%94%B9%E4%B8%A4%E6%AC%A1%EF%BC%9A%E4%B8%A4%E4%B8%AA%E5%87%BA%E5%8F%91%E7%82%B9%EF%BC%8C%E4%B8%A4%E4%B8%AA%E6%96%B9%E5%90%91"><span class="nav-text">1. 同一条公式被改两次：两个出发点，两个方向</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%BB%9F%E4%B8%80%E8%A7%86%E8%A7%92%EF%BC%9A%E9%83%BD%E6%98%AF%E6%B7%B1%E5%BA%A6%E7%BB%B4%E7%BA%BF%E6%80%A7%E6%B3%A8%E6%84%8F%E5%8A%9B"><span class="nav-text">2. 统一视角：都是深度维线性注意力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-mHC%EF%BC%9A%E5%8F%8C%E5%90%91%E5%BD%92%E4%B8%80%EF%BC%8C%E7%BA%A6%E6%9D%9F%E6%8D%A2%E7%A8%B3%E5%AE%9A"><span class="nav-text">3. mHC：双向归一，约束换稳定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-AttnRes%EF%BC%9A%E5%8D%95%E5%90%91%E5%BD%92%E4%B8%80%EF%BC%8C%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%8D%A2%E9%80%89%E6%8B%A9"><span class="nav-text">4. AttnRes：单向归一，注意力换选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%B6%88%E8%9E%8D%E9%98%B6%E6%A2%AF%EF%BC%9A%E5%A2%9E%E7%9B%8A%E6%8B%86%E6%88%90%E4%B8%A4%E6%A1%A3"><span class="nav-text">5. 消融阶梯：增益拆成两档</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B7%A5%E7%A8%8B%E8%B4%A6%EF%BC%9A3d%E3%80%815-5d%E3%80%8134d-%E4%B8%8E%E4%B8%89%E4%B8%AA%E5%BC%80%E9%94%80%E6%95%B0%E5%AD%97"><span class="nav-text">6. 工程账：3d、5.5d、34d 与三个开销数字</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E8%90%BD%E5%9C%B0%E5%9C%B0%E5%9B%BE%EF%BC%9AGLM-%E4%B8%8E-Kimi-%E5%90%84%E9%80%89%E4%B8%80%E6%9D%A1"><span class="nav-text">7. 落地地图：GLM 与 Kimi 各选一条</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E7%BB%93%E8%AF%AD%EF%BC%9A%E6%8A%8A%E4%B8%89%E4%B8%AA%E5%88%86%E7%B1%BB%E6%8B%BC%E6%88%90%E4%B8%80%E5%BC%A0%E5%9B%BE"><span class="nav-text">8. 结语：把三个分类拼成一张图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE"><span class="nav-text">本讲知识地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93"><span class="nav-text">本讲小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87"><span class="nav-text">概念卡片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B1%E5%BA%A6%E7%BB%B4%E6%B3%A8%E6%84%8F%E5%8A%9B"><span class="nav-text">深度维注意力</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E9%9A%8F%E6%9C%BA%E7%BA%A6%E6%9D%9F"><span class="nav-text">双随机约束</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%AA%E6%9F%A5%E8%AF%A2%E5%90%91%E9%87%8F"><span class="nav-text">伪查询向量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PreNorm-%E7%A8%80%E9%87%8A"><span class="nav-text">PreNorm 稀释</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%B5%8B%E9%A2%98%EF%BC%88%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94%EF%BC%89"><span class="nav-text">自测题（面试速答）</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="高鸿烨"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">高鸿烨</p>
+  <div class="site-description" itemprop="description">Gao HongYe 的个人博客</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jizhuwojiaopaozong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:m15944834309@163.com" title="E-Mail → mailto:m15944834309@163.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://github.com/jizhuwojiaopaozong" title="https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener" target="_blank">Gao HongYe</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://theme-next.js.org/" title="https:&#x2F;&#x2F;theme-next.js.org" rel="noopener" target="_blank">NexT</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jizhuwojiaopaozong.github.io/2026/11/18/mhc-vs-attnres-opposite-directions/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="高鸿烨">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Gao HongYe">
+      <meta itemprop="description" content="Gao HongYe 的个人博客">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择 | Gao HongYe">
+      <meta itemprop="description" content="对照解读 mHC 与 AttnRes：统一深度维线性注意力视角、双随机双向归一 vs softmax 单向归一、16 层消融两档增益、访存与开销工程账、GLM 与 Kimi 的落地选择">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2026-11-18 20:40:00 / 修改时间：20:40:23" itemprop="dateCreated datePublished" datetime="2026-11-18T20:40:00+08:00">2026-11-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/attnres/" itemprop="url" rel="index"><span itemprop="name">attnres</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+            <div class="post-description">对照解读 mHC 与 AttnRes：统一深度维线性注意力视角、双随机双向归一 vs softmax 单向归一、16 层消融两档增益、访存与开销工程账、GLM 与 Kimi 的落地选择</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>核心主线：同一条残差公式半年内被改两次，方向却相反——mHC 从 HC 往回收，用双随机约束换稳定；AttnRes 从标准残差往前走，用深度维 softmax 注意力换选择。统一视角下它们都是「深度维线性注意力」，差别全在约束。<br>本讲目标：读完你能回答「标准残差、mHC、AttnRes 在统一公式里各是什么权重」「双向归一与单向归一各自放弃和换来了什么」「消融阶梯的两档增益各证明什么」<br>课程来源：mHC和AttnRes都改了残差，为什么方向恰相反（小红书图文笔记，作者：AI追问录，7 张卡，笔记 ID 6a995ee10000000028002b07；延伸 arXiv：mHC 2512.24880、AttnRes 2603.15031）</p>
+</blockquote>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#1-%E5%90%8C%E4%B8%80%E6%9D%A1%E5%85%AC%E5%BC%8F%E8%A2%AB%E6%94%B9%E4%B8%A4%E6%AC%A1%E4%B8%A4%E4%B8%AA%E5%87%BA%E5%8F%91%E7%82%B9%E4%B8%A4%E4%B8%AA%E6%96%B9%E5%90%91">1. 同一条公式被改两次：两个出发点，两个方向</a></li>
+<li><a href="#2-%E7%BB%9F%E4%B8%80%E8%A7%86%E8%A7%92%E9%83%BD%E6%98%AF%E6%B7%B1%E5%BA%A6%E7%BB%B4%E7%BA%BF%E6%80%A7%E6%B3%A8%E6%84%8F%E5%8A%9B">2. 统一视角：都是深度维线性注意力</a></li>
+<li><a href="#3-mhc%E5%8F%8C%E5%90%91%E5%BD%92%E4%B8%80%E7%BA%A6%E6%9D%9F%E6%8D%A2%E7%A8%B3%E5%AE%9A">3. mHC：双向归一，约束换稳定</a></li>
+<li><a href="#4-attnres%E5%8D%95%E5%90%91%E5%BD%92%E4%B8%80%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%8D%A2%E9%80%89%E6%8B%A9">4. AttnRes：单向归一，注意力换选择</a></li>
+<li><a href="#5-%E6%B6%88%E8%9E%8D%E9%98%B6%E6%A2%AF%E5%A2%9E%E7%9B%8A%E6%8B%86%E6%88%90%E4%B8%A4%E6%A1%A3">5. 消融阶梯：增益拆成两档</a></li>
+<li><a href="#6-%E5%B7%A5%E7%A8%8B%E8%B4%A63d55d34d-%E4%B8%8E%E4%B8%89%E4%B8%AA%E5%BC%80%E9%94%80%E6%95%B0%E5%AD%97">6. 工程账：3d、5.5d、34d 与三个开销数字</a></li>
+<li><a href="#7-%E8%90%BD%E5%9C%B0%E5%9C%B0%E5%9B%BEglm-%E4%B8%8E-kimi-%E5%90%84%E9%80%89%E4%B8%80%E6%9D%A1">7. 落地地图：GLM 与 Kimi 各选一条</a></li>
+<li><a href="#8-%E7%BB%93%E8%AF%AD%E6%8A%8A%E4%B8%89%E4%B8%AA%E5%88%86%E7%B1%BB%E6%8B%BC%E6%88%90%E4%B8%80%E5%BC%A0%E5%9B%BE">8. 结语：把三个分类拼成一张图</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE">本讲知识地图</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93">本讲小结</a></li>
+<li><a href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87">概念卡片</a></li>
+<li><a href="#%E8%87%AA%E6%B5%8B%E9%A2%98%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94">自测题（面试速答）</a></li>
+</ul>
+<hr>
+<h2 id="1-同一条公式被改两次：两个出发点，两个方向"><a href="#1-同一条公式被改两次：两个出发点，两个方向" class="headerlink" title="1. 同一条公式被改两次：两个出发点，两个方向"></a>1. 同一条公式被改两次：两个出发点，两个方向</h2><p>残差连接这条用了十年的公式 $h_{l+1} &#x3D; h_l + F_l(h_l)$，2026 上半年被改了两次，而且方向正好相反。</p>
+<p><strong>mHC 是往回收</strong>：它的出发点是 Hyper-Connections 的不稳定——层间自由混合弄丢了恒等映射，累积增益峰值飙到 3000（理想值是 1），27B 模型训练到 12k 步 loss 突跳。解法是给混合矩阵加约束：投影到双随机流形，把 HC 放出去的自由度收回来。</p>
+<p><strong>AttnRes 是往前走</strong>：它的出发点是标准残差的 PreNorm 稀释——固定 1:1 累加让隐状态幅值随深度增长、每层贡献越来越小。解法是给深度维加自由度：每层一个伪查询向量，对前层输出做 softmax 注意力，把固定累加换成可选择的加权。</p>
+<p>一个加约束、一个加自由，看似背道而驰，实则在同一条轴上相向而行：都在重新设计「历史信息如何汇入当前层」。</p>
+<p><img src="/images/attnres-xhs/card3.jpg" alt="mHC 往回收：HC 自由混合丢恒等映射，双随机投影换稳定（原笔记第 3 卡）">原笔记的八字总结很准：<strong>约束换稳定，注意力换选择</strong>。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：mHC 从 HC 往回收（加约束），AttnRes 从标准残差往前走（加选择）——方向相反，问题同一个。</p>
+</blockquote>
+<hr>
+<h2 id="2-统一视角：都是深度维线性注意力"><a href="#2-统一视角：都是深度维线性注意力" class="headerlink" title="2. 统一视角：都是深度维线性注意力"></a>2. 统一视角：都是深度维线性注意力</h2><p>原笔记给出的最锋利的一句话是：标准残差和所有变体，<strong>本质都是深度维线性注意力——权重不过 softmax，差异在约束</strong>。把它们写进同一个公式就一目了然：</p>
+<p>$$h_L &#x3D; \sum_{j &lt; L} \alpha_{lj}  v_j$$</p>
+<p>其中 $v_j$ 是第 $j$ 层交给残差流的增量，三种方案的差别全在权重 $\alpha_{lj}$：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">标准残差   α = 1（全 1 权重）        无归一、无选择、无动态</span><br><span class="line">mHC       α = 双随机矩阵元素         动态线性混合 + 行/列双向归一 → 不能聚焦</span><br><span class="line">AttnRes   α = softmax(ω_l · RMSNorm(v_j))  查询侧单向归一 → 分布可以锐</span><br></pre></td></tr></table></figure>
+
+<p>这个视角的价值：它把「残差改进」从一堆各自为政的结构 trick 变成了一条设计谱系——你可以沿两个旋钮移动：权重是否随输入动（静态→动态），以及归一化方式（无→双向→单向 softmax）。标准残差、HC、mHC、AttnRes 只是谱系上的四个点。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：一个公式收编全部残差变体：$\sum \alpha_{lj} v_j$；三家差别 &#x3D; 权重的动态性 × 归一化约束。</p>
+</blockquote>
+<hr>
+<h2 id="3-mHC：双向归一，约束换稳定"><a href="#3-mHC：双向归一，约束换稳定" class="headerlink" title="3. mHC：双向归一，约束换稳定"></a>3. mHC：双向归一，约束换稳定</h2><p>mHC 的约束集合是行和、列和都为 1 加非负：</p>
+<p>$$H \mathbf{1} &#x3D; \mathbf{1}, \qquad \mathbf{1}^{\top} H &#x3D; \mathbf{1}^{\top}, \qquad H \geq 0$$</p>
+<p>行约束管「这层从各条流各取多少」，列约束管「每条流被消耗多少」。双向归一的直接后果是<strong>凸组合</strong>：混合后的输出落在输入的包围圈内，谱范数不超 1、连乘封闭，HC 那个 3000 倍的累积增益被压回理想值 1 附近——稳定性从此可证明，而不是靠调参碰运气。</p>
+<p>代价同样直接：<strong>凸组合混合后无法聚焦</strong>。双随机矩阵可以把信息均匀重分配、可以置换，但很难让某一层输出「独占」后续层的注意力——每一行的权重和为 1 且每一列的贡献也被守恒锁住，选择性被约束掉了。这正是下一条路线的起点。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：mHC &#x3D; 双向归一的双随机混合：稳定可证明，代价是失去聚焦能力。</p>
+</blockquote>
+<hr>
+<h2 id="4-AttnRes：单向归一，注意力换选择"><a href="#4-AttnRes：单向归一，注意力换选择" class="headerlink" title="4. AttnRes：单向归一，注意力换选择"></a>4. AttnRes：单向归一，注意力换选择</h2><p>AttnRes 只约束查询侧：每层一个<strong>伪查询向量</strong> $\omega_l$，对前层输出做 softmax 注意力，权重和为 1 但<strong>分布可以锐</strong>——极端情况下接近只取某一层。这就是「选择」：模型可以按输入内容决定「这一层主要听第 3 层的」，而不是被迫把所有历史层按比例掺在一起。</p>
+<p><img src="/images/attnres-xhs/card4.jpg" alt="AttnRes 往前走：标准 / Full / Block 三种结构与伪查询打分（原笔记第 4 卡）"></p>
+<p>权重随输入内容变化是另一个关键：$\omega_l$ 虽是每层静态参数，但打分对象 $v_j$ 与输入相关，于是 $\alpha_{lj}$ 随 token 与上下文变化——同一个层位置，不同输入可以取完全不同的历史组合。对比 mHC：混合矩阵也动态（由输入生成），但被双随机流形锁住形状；AttnRes 把动态性保留在 softmax 的尖锐分布里。</p>
+<p>值得补一句原笔记没展开的对照：AttnRes 的「锐分布按需取层」与 Engram 的「查表取知识」在精神上是同族——都是让深度维的信息访问从「全程搅拌」变成「按需检索」；区别是 AttnRes 检索的是层输出、仍走注意力打分，Engram 检索的是 N-gram 嵌入表、走哈希（原笔记未展开，笔记补充）。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：AttnRes &#x3D; 查询侧单向归一的深度维 softmax：分布可锐、可按输入选择，拿稳定性约束换了检索式访问。</p>
+</blockquote>
+<hr>
+<h2 id="5-消融阶梯：增益拆成两档"><a href="#5-消融阶梯：增益拆成两档" class="headerlink" title="5. 消融阶梯：增益拆成两档"></a>5. 消融阶梯：增益拆成两档</h2><p>16 层同算力消融（loss，越低越好）给出了一架漂亮的阶梯：</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>loss</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>静态权重</td>
+<td>1.767</td>
+<td>几乎无增益</td>
+</tr>
+<tr>
+<td>mHC（动态线性混合）</td>
+<td>1.747</td>
+<td>第一档增益</td>
+</tr>
+<tr>
+<td>AttnRes（softmax 注意力）</td>
+<td>1.737</td>
+<td>第二档增益</td>
+</tr>
+</tbody></table>
+<p><strong>第一档：让权重随输入动起来。</strong> 静态权重（不管形状如何，只要与输入无关）几乎拿不到增益——深度维的混合必须「看菜下饭」，不同 token 需要不同的历史组合。mHC 的动态线性混合吃到了这一档。</p>
+<p><strong>第二档：把线性混合升级成 softmax 注意力。</strong> 从 1.747 到 1.737 的差距来自归一化方式：softmax 引入竞争机制（一层拿得多、别层就拿得少）与锐分布能力，让「选择」真正成为可能；双向归一的线性混合只能做守恒的重分配。两档合起来解释了一个反直觉事实：约束更少的 AttnRes 反而更稳地赢——因为它的稳定性来自 softmax 自带的归一，而不是外加的流形投影。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：阶梯两档 &#x3D; 动态性（静态→动态线性）+ 选择性（线性归一→softmax）；1.767→1.747→1.737。</p>
+</blockquote>
+<hr>
+<h2 id="6-工程账：3d、5-5d、34d-与三个开销数字"><a href="#6-工程账：3d、5-5d、34d-与三个开销数字" class="headerlink" title="6. 工程账：3d、5.5d、34d 与三个开销数字"></a>6. 工程账：3d、5.5d、34d 与三个开销数字</h2><p>每层每 token 的访存账（$d$ 为特征维）：标准残差 3d、Block AttnRes 5.5d、mHC 34d——mHC 贵在维护 4 条残差流的读写（n&#x3D;4 时状态本身变成 4 倍宽，混合矩阵的读写再叠一层），Block 版 AttnRes 只把块间检索的账算进来，约为 mHC 的 1&#x2F;6。</p>
+<p>训练开销三个数字：mHC 6.7%（靠 TileLang 定制 kernel、选择性重计算、DualPipe 调度压下来的）；AttnRes 开流水线 &lt;4%；无流水线 ≈0——AttnRes 的激活值本来就要为反向传播保存，单卡内额外开销近乎消失，代价主要体现在流水线并行时跨 stage 的历史层传输（原笔记口径，笔记补充：这也是 Block 版存在的理由——把跨块通信量从 L 压到 N）。</p>
+<p>最后必须带上的对比条件：这些直接对比数字<strong>全部来自 AttnRes 论文的同算力消融</strong>——Full 版 loss 优于 mHC、Block 版持平且访存 1&#x2F;6；而 mHC 自己的 27B 实验（如 BBH 43.8→51.0）并没有对照 AttnRes。跨论文引用数字时，口径比数字重要。</p>
+<p><img src="/images/attnres-xhs/card6.jpg" alt="成本与效果：访存 3d/5.5d/34d、开销 6.7%/&lt;4%/≈0 与对比条件（原笔记第 6 卡）"></p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：访存 3d&#x2F;5.5d&#x2F;34d、开销 ≈0&#x2F;&lt;4%&#x2F;6.7%；但对比数字出自 AttnRes 论文口径，mHC 27B 实验未对照 AttnRes。</p>
+</blockquote>
+<hr>
+<h2 id="7-落地地图：GLM-与-Kimi-各选一条"><a href="#7-落地地图：GLM-与-Kimi-各选一条" class="headerlink" title="7. 落地地图：GLM 与 Kimi 各选一条"></a>7. 落地地图：GLM 与 Kimi 各选一条</h2><p>两条路线都已经有大模型实战背书：<strong>GLM-5.3-Flash 选了 mHC，Kimi K3 选了 Block AttnRes</strong>。选择逻辑可以还原成两条价值排序：把训练稳定性当作第一约束（超深、大规模、不容 loss 突跳）→ 选可证明的双随机约束；把深度维的信息选择权当作第一收益（需要按输入灵活取层、且工程上能接受流水线通信账）→ 选 softmax 注意力，再用 Block 化把通信压到可接受。</p>
+<p>原笔记的结语值得原样留下：两条路共同确认了<strong>深度方向的信息流值得单独设计</strong>；消融阶梯把增益拆成两档（动态性、softmax 选择）；而「深度维注意力这条线，才刚开始」——约束与选择的中间地带（比如块内双随机、块间 softmax 的混合约束）显然是下一站。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：GLM-5.3-Flash × mHC、Kimi K3 × Block AttnRes；稳定性优先选约束，选择权优先选注意力。</p>
+</blockquote>
+<hr>
+<h2 id="8-结语：把三个分类拼成一张图"><a href="#8-结语：把三个分类拼成一张图" class="headerlink" title="8. 结语：把三个分类拼成一张图"></a>8. 结语：把三个分类拼成一张图</h2><p>至此本博客三条技术线闭环：N-gram 分类讲 <strong>Engram</strong>——把静态知识从计算流剥离成 O(1) 查表（存储轴）；mHc 分类讲 <strong>mHC</strong>——用双随机流形稳住多路残差混合（稳定轴）；attnres 分类讲 <strong>AttnRes</strong>——用深度维 softmax 把累加换成选择（选择轴）。三者加上本篇的对照视角，恰好覆盖 Transformer 信息流的四个位置：知识怎么存（Engram）、通路怎么稳（mHC）、历史怎么选（AttnRes）、以及把它们统一起来的公式 $\sum_j \alpha_{lj} v_j$。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：存储、稳定、选择三轴各有一篇解读，本篇是它们的对照表与路线图。</p>
+</blockquote>
+<h2 id="本讲知识地图"><a href="#本讲知识地图" class="headerlink" title="本讲知识地图"></a>本讲知识地图</h2><pre>
+<code class="mermaid">
+
+graph TD
+  R((残差改造对照))
+  subgraph 统一公式
+    DA[深度维注意力] --&gt;|权重全1| SR[标准残差]
+    DA --&gt;|双随机约束| DS[双随机约束]
+    DA --&gt;|softmax 单向归一| SA[softmax 深度注意力]
+  end
+  subgraph 动机
+    PD[PreNorm 稀释] --&gt;|催生| SA
+    DS --&gt;|锁住| PD
+  end
+  subgraph 实现
+    PQ[伪查询向量] --&gt;|打分| SA
+  end
+  R --&gt; DA
+</code>
+</pre>
+
+<h2 id="本讲小结"><a href="#本讲小结" class="headerlink" title="本讲小结"></a>本讲小结</h2><table>
+<thead>
+<tr>
+<th>机制&#x2F;概念</th>
+<th>解决什么问题</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>双随机双向归一</td>
+<td>HC 自由混合累积增益 3000 倍</td>
+<td>凸组合+谱范数≤1+乘法封闭，稳定可证明但无法聚焦</td>
+</tr>
+<tr>
+<td>查询侧单向归一</td>
+<td>标准残差固定累加无法选择</td>
+<td>softmax 分布可锐，按输入取层</td>
+</tr>
+<tr>
+<td>消融两档</td>
+<td>不知道增益来自哪里</td>
+<td>动态性一档（1.767→1.747）、softmax 一档（→1.737）</td>
+</tr>
+<tr>
+<td>Block 化</td>
+<td>深度维注意力的访存&#x2F;通信账</td>
+<td>块内累加块间检索，5.5d 约为 mHC 34d 的 1&#x2F;6</td>
+</tr>
+</tbody></table>
+<p><strong>学完能说的 3 句话：</strong></p>
+<ol>
+<li>标准残差、mHC、AttnRes 是同一个深度维线性注意力公式在「动态性 × 归一化约束」谱系上的三个点。</li>
+<li>mHC 双向归一换可证明的稳定但失去聚焦；AttnRes 单向归一换锐分布选择但把稳定性交给 softmax 自身。</li>
+<li>消融阶梯证明增益两档：权重随输入动（第一档）、线性混合升级 softmax（第二档）；工程上 AttnRes 更轻，但对比数字出自其论文口径。</li>
+</ol>
+<h2 id="概念卡片"><a href="#概念卡片" class="headerlink" title="概念卡片"></a>概念卡片</h2><h3 id="深度维注意力"><a href="#深度维注意力" class="headerlink" title="深度维注意力"></a>深度维注意力</h3><ul>
+<li>定义：把层间信息汇入写成对历史层增量的加权求和的统一视角，标准残差&#x2F;mHC&#x2F;AttnRes 只是权重约束不同</li>
+<li>出现：第 2 节「统一视角：都是深度维线性注意力」、第 8 节「结语：把三个分类拼成一张图」</li>
+<li>依赖：</li>
+<li>易混：softmax 深度注意力——深度维注意力是统一族，softmax 版是其中约束最松、选择性最强的一支</li>
+</ul>
+<h3 id="双随机约束"><a href="#双随机约束" class="headerlink" title="双随机约束"></a>双随机约束</h3><ul>
+<li>定义：行和、列和均为 1 且非负的混合矩阵约束，带来凸组合、谱范数≤1 与乘法封闭</li>
+<li>出现：第 3 节「mHC：双向归一，约束换稳定」、第 4 节「AttnRes：单向归一，注意力换选择」</li>
+<li>依赖：深度维注意力</li>
+<li>易混：softmax 深度注意力——双随机双向归一不能聚焦，softmax 单向归一可以锐化选择</li>
+</ul>
+<h3 id="伪查询向量"><a href="#伪查询向量" class="headerlink" title="伪查询向量"></a>伪查询向量</h3><ul>
+<li>定义：AttnRes 中每层一个的静态偏好向量，与输入相关的层输出打分后经 softmax 得到层间权重</li>
+<li>出现：第 4 节「AttnRes：单向归一，注意力换选择」、第 5 节「消融阶梯：增益拆成两档」</li>
+<li>依赖：深度维注意力</li>
+<li>易混：</li>
+</ul>
+<h3 id="PreNorm-稀释"><a href="#PreNorm-稀释" class="headerlink" title="PreNorm 稀释"></a>PreNorm 稀释</h3><ul>
+<li>定义：固定 1:1 累加使隐状态幅值随深度增长、早期层相对贡献衰减的现象</li>
+<li>出现：第 1 节「同一条公式被改两次：两个出发点，两个方向」、第 4 节「AttnRes：单向归一，注意力换选择」</li>
+<li>依赖：</li>
+<li>易混：双随机约束——稀释是标准残差的病，双随机是 HC 的病（自由混合）的药，两者动机不同</li>
+</ul>
+<h2 id="自测题（面试速答）"><a href="#自测题（面试速答）" class="headerlink" title="自测题（面试速答）"></a>自测题（面试速答）</h2><ol>
+<li>在统一公式 h_L &#x3D; Σ α_lj v_j 下，标准残差、mHC、AttnRes 的权重 α 各是什么？（对应：深度维注意力）</li>
+</ol>
+<p><strong>答案：</strong> 标准残差的 α 恒为 1，即对所有历史层增量无差别累加，没有归一也没有选择；mHC 的 α 是双随机混合矩阵的元素，由输入动态生成但被行和、列和均为 1 加非负的约束锁死，只能做守恒的凸组合重分配；AttnRes 的 α 是 softmax 注意力权重，由每层伪查询向量与输入相关的层输出打分得到，仅查询侧归一。所以三者是同一深度维线性注意力在「动态性 × 归一化约束」谱系上的三个点，差异不在结构而在约束。</p>
+<ol start="2">
+<li>mHC 双向归一与 AttnRes 单向归一各自放弃和换来了什么？为什么 mHC 无法聚焦？（对应：双随机约束）</li>
+</ol>
+<p><strong>答案：</strong> mHC 行、列双向归一换来可证明的稳定：凸组合使输出不超出输入范围、谱范数不超 1、连乘封闭，HC 的 3000 倍累积增益被压回 1；代价是失去聚焦——每行权重和为 1 的同时每列贡献也被守恒锁住，混合只能重分配不能独占。AttnRes 只约束查询侧权重和为 1，放弃列向守恒，换来锐分布：极端时接近只取某一层，实现按输入内容的选择。一句话：双向归一买稳定卖选择，单向归一买选择卖守恒。</p>
+<ol start="3">
+<li>16 层同算力消融的两档增益各证明什么机制？（对应：伪查询向量）</li>
+</ol>
+<p><strong>答案：</strong> 第一档（静态 1.767 → mHC 1.747）证明权重必须随输入动起来：静态权重无论形状如何都几乎无增益，因为不同 token 需要不同的历史组合，这正是伪查询&#x2F;动态生成的价值所在。第二档（mHC 1.747 → AttnRes 1.737）证明归一化方式本身有收益：softmax 引入竞争与锐分布，把线性混合升级成真正的选择机制。两档合起来说明深度维改造的收益来源是「动态性 + 选择性」，而非单纯增加连接数。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DeepSeek/" rel="tag"># DeepSeek</a>
+              <a href="/tags/mHc/" rel="tag"># mHc</a>
+              <a href="/tags/attnres/" rel="tag"># attnres</a>
+              <a href="/tags/Kimi/" rel="tag"># Kimi</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/18/kimi-attention-residuals-rotated-90-degrees/" rel="prev" title="注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读）">
+                  <i class="fa fa-angle-left"></i> 注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读）
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">高鸿烨</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script>
+// 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+// 背景通过 CSS 变量 --site-bg 挂在 body::before 固定层上（见 styles.styl）
+(function () {
+  var bgs = [
+    '/images/bg/bg-1.svg',
+    '/images/bg/bg-2.svg',
+    '/images/bg/bg-3.svg',
+    '/images/bg/bg-4.svg',
+    '/images/bg/bg-5.svg',
+    '/images/bg/bg-6.svg'
+  ];
+  var current = 0;
+  // 预加载，避免首次点击时闪白
+  bgs.forEach(function (u) { var img = new Image(); img.src = u; });
+  document.addEventListener('click', function () {
+    var next;
+    do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
+    current = next;
+    document.documentElement.style.setProperty('--site-bg', 'url(' + bgs[current] + ')');
+  });
+})();
+</script>
+
+</body>
+</html>
