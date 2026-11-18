@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jizhuwojiaopaozong.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="解读 Kimi《注意力残差》：层间注意力替代无差别累加、PreNorm 稀释、full 与 block-wise 两形态、与 HC&#x2F;mHC 的统一框架对照">
+<meta property="og:type" content="article">
+<meta property="og:title" content="注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读）">
+<meta property="og:url" content="https://jizhuwojiaopaozong.github.io/2026/11/18/kimi-attention-residuals-rotated-90-degrees/index.html">
+<meta property="og:site_name" content="Gao HongYe">
+<meta property="og:description" content="解读 Kimi《注意力残差》：层间注意力替代无差别累加、PreNorm 稀释、full 与 block-wise 两形态、与 HC&#x2F;mHC 的统一框架对照">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-18T12:10:00.000Z">
+<meta property="article:modified_time" content="2026-11-18T12:07:49.025Z">
+<meta property="article:author" content="高鸿烨">
+<meta property="article:tag" content="论文笔记">
+<meta property="article:tag" content="attnres">
+<meta property="article:tag" content="Kimi">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jizhuwojiaopaozong.github.io/2026/11/18/kimi-attention-residuals-rotated-90-degrees/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jizhuwojiaopaozong.github.io/2026/11/18/kimi-attention-residuals-rotated-90-degrees/","path":"2026/11/18/kimi-attention-residuals-rotated-90-degrees/","title":"注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读） | Gao HongYe</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/next-theme-pjax/0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/medium-zoom/1.1.0/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pangu/7.2.1/pangu.umd.js" integrity="sha256-kRsxecBnwG6mULFPe2E6UKnNm8XfDOuDwCOprjLZuX8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"/vendor/mermaid/mermaid.min.js"}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","display_overflow":"scroll","js":{"url":"/vendor/mathjax/es5/tex-mml-chtml.js"},"font_path":"/vendor/mathjax/es5/output/chtml/fonts/woff-v2/"}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Gao HongYe</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">ghy Blogs</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%BC%80%E5%9C%BA%EF%BC%9AKimi-%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8A%A5%E5%91%8A%E4%B8%8E%E3%80%8C%E6%97%8B%E8%BD%AC-90-%E5%BA%A6%E3%80%8D%E7%9A%84%E6%AF%94%E5%96%BB"><span class="nav-text">1. 开场：Kimi 的技术报告与「旋转 90 度」的比喻</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%BC%A0%E7%BB%9F%E6%AE%8B%E5%B7%AE%E8%BF%9E%E6%8E%A5%E4%B8%8E%E9%80%92%E5%BD%92%E5%B1%95%E5%BC%80"><span class="nav-text">2. 传统残差连接与递归展开</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%B8%A4%E5%A4%A7%E6%AF%9B%E7%97%85%EF%BC%9A%E6%97%A0%E5%B7%AE%E5%88%AB%E7%9B%B8%E5%8A%A0%E4%B8%8E-PreNorm-%E7%A8%80%E9%87%8A"><span class="nav-text">3. 两大毛病：无差别相加与 PreNorm 稀释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%AE%8B%E5%B7%AE%EF%BC%9A%E6%8A%8A%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%97%8B%E8%BD%AC-90-%E5%BA%A6"><span class="nav-text">4. 注意力残差：把注意力旋转 90 度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%90%8C%E6%9E%84%E7%B1%BB%E6%AF%94%EF%BC%9ARNN-%E5%88%B0-Attention-%E7%9A%84%E6%94%B9%E8%BF%9B%E9%87%8D%E6%BC%94%E4%B8%80%E9%81%8D"><span class="nav-text">5. 同构类比：RNN 到 Attention 的改进重演一遍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E7%BB%9F%E4%B8%80%E6%A1%86%E6%9E%B6%EF%BC%9A%E5%8C%BA%E5%88%AB%E4%BB%85%E5%9C%A8-M"><span class="nav-text">6. 统一框架：区别仅在 M</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-Block-wise-%E7%89%88%EF%BC%9A%E7%94%A8%E5%9D%97%E6%95%B0%E6%8D%A2%E5%A4%8D%E6%9D%82%E5%BA%A6"><span class="nav-text">7. Block-wise 版：用块数换复杂度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E-HC-mHC-%E5%AF%B9%E7%85%A7%E4%B8%8E%E6%94%B6%E5%B0%BE"><span class="nav-text">8. 与 HC&#x2F;mHC 对照与收尾</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE"><span class="nav-text">本讲知识地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93"><span class="nav-text">本讲小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87"><span class="nav-text">概念卡片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%AE%8B%E5%B7%AE"><span class="nav-text">注意力残差</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PreNorm-%E7%A8%80%E9%87%8A"><span class="nav-text">PreNorm 稀释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9D%97%E7%BA%A7%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%AE%8B%E5%B7%AE"><span class="nav-text">块级注意力残差</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%81%92%E7%AD%89%E6%98%A0%E5%B0%84"><span class="nav-text">恒等映射</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%B5%8B%E9%A2%98%EF%BC%88%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94%EF%BC%89"><span class="nav-text">自测题（面试速答）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%86%E9%A2%91%E6%97%B6%E9%97%B4%E7%B4%A2%E5%BC%95"><span class="nav-text">视频时间索引</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="高鸿烨"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">高鸿烨</p>
+  <div class="site-description" itemprop="description">Gao HongYe 的个人博客</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jizhuwojiaopaozong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:m15944834309@163.com" title="E-Mail → mailto:m15944834309@163.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://github.com/jizhuwojiaopaozong" title="https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener" target="_blank">Gao HongYe</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://theme-next.js.org/" title="https:&#x2F;&#x2F;theme-next.js.org" rel="noopener" target="_blank">NexT</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jizhuwojiaopaozong.github.io/2026/11/18/kimi-attention-residuals-rotated-90-degrees/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="高鸿烨">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Gao HongYe">
+      <meta itemprop="description" content="Gao HongYe 的个人博客">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读） | Gao HongYe">
+      <meta itemprop="description" content="解读 Kimi《注意力残差》：层间注意力替代无差别累加、PreNorm 稀释、full 与 block-wise 两形态、与 HC&#x2F;mHC 的统一框架对照">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          注意力残差：Kimi 把注意力旋转 90 度（Attention Residuals 解读）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2026-11-18 20:10:00 / 修改时间：20:07:49" itemprop="dateCreated datePublished" datetime="2026-11-18T20:10:00+08:00">2026-11-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/attnres/" itemprop="url" rel="index"><span itemprop="name">attnres</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+            <div class="post-description">解读 Kimi《注意力残差》：层间注意力替代无差别累加、PreNorm 稀释、full 与 block-wise 两形态、与 HC/mHC 的统一框架对照</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>核心主线：Kimi 的《注意力残差》把注意力机制「旋转 90 度」——从 token 之间的横向注意力变成层与层之间的纵向注意力，用加权聚合替代残差流的无差别累加，同时治愈不对称性与 PreNorm 稀释。<br>本讲目标：读完你能回答「注意力旋转 90 度到底旋转的是什么」「传统残差的两大毛病各自是什么」「full 与 block-wise 两种注意力残差如何权衡、与 HC&#x2F;mHC 有何异同」<br>课程来源：【注意力残差】10分钟看懂 马斯克盛赞的Kimi最新技术（B站 BV1fNw9ziEYk，UP主：东川路第一可爱猫猫虫，约 12 分钟）</p>
+</blockquote>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#1-%E5%BC%80%E5%9C%BAkimi-%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8A%A5%E5%91%8A%E4%B8%8E%E6%97%8B%E8%BD%AC-90-%E5%BA%A6%E7%9A%84%E6%AF%94%E5%96%BB">1. 开场：Kimi 的技术报告与「旋转 90 度」的比喻</a></li>
+<li><a href="#2-%E4%BC%A0%E7%BB%9F%E6%AE%8B%E5%B7%AE%E8%BF%9E%E6%8E%A5%E4%B8%8E%E9%80%92%E5%BD%92%E5%B1%95%E5%BC%80">2. 传统残差连接与递归展开</a></li>
+<li><a href="#3-%E4%B8%A4%E5%A4%A7%E6%AF%9B%E7%97%85%E6%97%A0%E5%B7%AE%E5%88%AB%E7%9B%B8%E5%8A%A0%E4%B8%8E-prenorm-%E7%A8%80%E9%87%8A">3. 两大毛病：无差别相加与 PreNorm 稀释</a></li>
+<li><a href="#4-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%AE%8B%E5%B7%AE%E6%8A%8A%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%97%8B%E8%BD%AC-90-%E5%BA%A6">4. 注意力残差：把注意力旋转 90 度</a></li>
+<li><a href="#5-%E5%90%8C%E6%9E%84%E7%B1%BB%E6%AF%94rnn-%E5%88%B0-attention-%E7%9A%84%E6%94%B9%E8%BF%9B%E9%87%8D%E6%BC%94%E4%B8%80%E9%81%8D">5. 同构类比：RNN 到 Attention 的改进重演一遍</a></li>
+<li><a href="#6-%E7%BB%9F%E4%B8%80%E6%A1%86%E6%9E%B6%E5%8C%BA%E5%88%AB%E4%BB%85%E5%9C%A8-m">6. 统一框架：区别仅在 M</a></li>
+<li><a href="#7-block-wise-%E7%89%88%E7%94%A8%E5%9D%97%E6%95%B0%E6%8D%A2%E5%A4%8D%E6%9D%82%E5%BA%A6">7. Block-wise 版：用块数换复杂度</a></li>
+<li><a href="#8-%E4%B8%8E-hcmhc-%E5%AF%B9%E7%85%A7%E4%B8%8E%E6%94%B6%E5%B0%BE">8. 与 HC&#x2F;mHC 对照与收尾</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE">本讲知识地图</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93">本讲小结</a></li>
+<li><a href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87">概念卡片</a></li>
+<li><a href="#%E8%87%AA%E6%B5%8B%E9%A2%98%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94">自测题（面试速答）</a></li>
+<li><a href="#%E8%A7%86%E9%A2%91%E6%97%B6%E9%97%B4%E7%B4%A2%E5%BC%95">视频时间索引</a></li>
+</ul>
+<hr>
+<h2 id="1-开场：Kimi-的技术报告与「旋转-90-度」的比喻"><a href="#1-开场：Kimi-的技术报告与「旋转-90-度」的比喻" class="headerlink" title="1. 开场：Kimi 的技术报告与「旋转 90 度」的比喻"></a>1. 开场：Kimi 的技术报告与「旋转 90 度」的比喻</h2><p>Kimi 团队发布了名为《注意力残差》（Attention Residuals）的技术报告，发布后马斯克也关注到并评价这是来自 Kimi 的 impressive work。视频要回答的问题是：这项工作究竟巧妙在哪里？</p>
+<p>论文作者之一给了一个极具画面感的描述：<strong>注意力残差把注意力机制顺时针旋转了 90 度</strong>。现在的注意力机制是横向的——关注不同 token 之间的关系；旋转 90 度之后，注意力发生在<strong>层与层之间</strong>，也就是模型的深度维度上。整期视频沿四条线展开：传统残差连接及其问题、注意力残差的两种形态（full 与 block-wise）、与字节 Hyper-Connections（HC）和 DeepSeek mHC 的异同、以及论文给出的统一框架。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：一句话记住这篇报告——把 token 间的横向注意力旋转 90 度，变成层间的纵向注意力。</p>
+</blockquote>
+<hr>
+<h2 id="2-传统残差连接与递归展开"><a href="#2-传统残差连接与递归展开" class="headerlink" title="2. 传统残差连接与递归展开"></a>2. 传统残差连接与递归展开</h2><p>传统残差连接由何恺明提出，已应用很久且在当前主流大模型上广泛使用。记 $h_l$ 为进入第 $l$ 层的 hidden state、$F_l$ 为该层变换，标准残差的意思是：$h_l$ 经过 $F_l$ 之后的量还要与未经变换的 $h_l$ 相加——直接把上一层的输出加进来成为本层输出：</p>
+<p>$$h_{l+1} &#x3D; h_l + F_l(h_l)$$</p>
+<p>做一个递归的展开可以发现，第 $L$ 层（后面任意某层）都可以写成前面某一层加上各层增量累加的形式：把每层的增量记为 $v_j$，则 $h_L &#x3D; h_0 + \sum_{j} v_j$——过往所有层输出的累加和。</p>
+<p>残差连接最大的好处是<strong>方便梯度回传</strong>：可以把它理解为一条直通的高速公路，求梯度时会翻出一个单位阵 $I$，即恒等映射（identity mapping）——不管其他项多么复杂，有这样一条直通连过来的线，梯度就能直接回传到前面。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：传统残差 &#x3D; 逐层累加所有增量；梯度里永远有一份恒等映射，这是它能撑住深度的原因。</p>
+</blockquote>
+<hr>
+<h2 id="3-两大毛病：无差别相加与-PreNorm-稀释"><a href="#3-两大毛病：无差别相加与-PreNorm-稀释" class="headerlink" title="3. 两大毛病：无差别相加与 PreNorm 稀释"></a>3. 两大毛病：无差别相加与 PreNorm 稀释</h2><p>第一个问题是<strong>无差别的相加</strong>，这与当前主流模型的其他部分很不对称：序列维度上，Attention 对多个 token 不是无差别相加，而是通过 softmax 机制计算注意力分数、决定模型更关注哪些 token 的加权聚合；专家维度上，MoE（混合专家模型）通过 router（路由器）动态决定每次使用哪些专家。唯独在<strong>模型深度</strong>这一维度上，残差连接还在用一种固定的加法，和其他部分感觉很不匹配。</p>
+<p>第二个问题叫 <strong>PreNorm dilution（预归一化稀释）</strong>：每一次往前传的过程中，每一层的残差流都会加入一个增量；而由于有了 Norm（归一化），各层增量的大小其实是相近的——这样每层的<strong>相对贡献</strong>就越来越小。比如到了第 30 层想找回第 1 层的信息，会发现它的占比已经非常非常小；长距离依赖的信息因此很难被记住、很难被找出。</p>
+<p>注意这两个毛病的方向相反：一个是「该加权的地方没加权」，一个是「早期层的信号被后期增量淹没」。注意力残差对两者同时下手。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：深度维度的固定加法与序列&#x2F;专家维度的动态选择不对称；PreNorm 稀释让早期层贡献随深度衰减——这是注意力残差要治的两个病。</p>
+</blockquote>
+<hr>
+<h2 id="4-注意力残差：把注意力旋转-90-度"><a href="#4-注意力残差：把注意力旋转-90-度" class="headerlink" title="4. 注意力残差：把注意力旋转 90 度"></a>4. 注意力残差：把注意力旋转 90 度</h2><p>怎么理解「旋转 90 度」：现在的注意力关注不同 token 之间，是横向的；旋转 90 度就是在<strong>层与层之间</strong>做注意力——不再把每层增量固定无差别地加在一起，而是在加之前先做<strong>加权求和</strong>：对每个层计算一个注意力分数，让每一层自己决定更应该关注之前的哪一层。于是递归展开从累加变成加权：</p>
+<p>$$h_L &#x3D; \sum_{j} \alpha_{lj} v_j, \qquad \alpha_{lj} &#x3D; \mathrm{softmax}_j \left( \omega_l^{\top}  \mathrm{RMSNorm}(v_j) \right)$$</p>
+<p>其中 $\omega_l$ 是每一层的<strong>偏好向量</strong>，决定它想从历史层里找到哪些信息；关键性质是 $\omega_l$ <strong>不是输入依赖的</strong>——它不看当前 token，只与层有关；而 $v_j$ 与输入相关，不同 token、不同上下文下都不一样。两者加 RMSNorm 后计算注意力分数再加权。这就是 <strong>full attention residuals</strong>（完全的注意力残差）。</p>
+<p>那能不能让 $\omega_l$ 输入依赖？可以：用当前隐藏状态 $h_l$ 经一个可学习矩阵变换生成 query。效果确实有微小提升，但代价是多一次矩阵变换、更贵，而且推理上会变成串行的——所以<strong>默认不用</strong>。这个取舍值得记住：把「层偏好」做成静态参数，换来了并行与便宜。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：层间注意力 &#x3D; 每层一个静态偏好向量对历史层增量打分加权；输入依赖版更准但更贵更串行，故默认不用。</p>
+</blockquote>
+<hr>
+<h2 id="5-同构类比：RNN-到-Attention-的改进重演一遍"><a href="#5-同构类比：RNN-到-Attention-的改进重演一遍" class="headerlink" title="5. 同构类比：RNN 到 Attention 的改进重演一遍"></a>5. 同构类比：RNN 到 Attention 的改进重演一遍</h2><p>论文还提供了另一个理解角度：<strong>模型的深度实际上就是另外一种时间</strong>，并把 RNN 放在一起阐述——两个改进是完全相通的。</p>
+<p>RNN 到第 $t$ 个时间步只能拿到上一个压缩状态 $s_{t-1}$：前面所有时间步的信息都被压缩进这一个状态里，问题是长距离依赖的信息难记、信息被压缩稀释了。怎么解决？注意力机制（Attention Is All You Need）：不再只依赖这个「压缩包」，而是直接看之前的所有 token，对它们计算注意力分数。</p>
+<p>把镜头切回残差连接：传统残差的递归累加正是这样一种「压缩」——把之前所有层都压进一条残差流里；注意力残差不再压缩，而是直接把之前的每个层拿出来计算注意力分数。于是层数 $L$ 就像时间步 $T$：Attention 是对 RNN 做了 token&#x2F;时间步上的注意力，注意力残差就是对残差连接做了<strong>层数上的注意力</strong>——打分、加权聚合，不再每次压缩到一起。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：残差流之于深度，等价于压缩状态之于时间；注意力残差 &#x3D; 在深度轴上重演一遍 RNN→Attention 的革命。</p>
+</blockquote>
+<hr>
+<h2 id="6-统一框架：区别仅在-M"><a href="#6-统一框架：区别仅在-M" class="headerlink" title="6. 统一框架：区别仅在 M"></a>6. 统一框架：区别仅在 M</h2><p>注意力残差论文里提出了一种<strong>大一统的架构</strong>：所有和残差相关的改进都被定义进同一个框架，彼此的区别仅仅是 $M$ 的不同。</p>
+<ul>
+<li><strong>传统残差连接</strong>：$M$ 等于单位阵——$v_0$ 加 $v_1$ 一直加到 $v_{L-1}$，直接相加</li>
+<li><strong>HC 与 mHC</strong>：做的是一种压缩&#x2F;变换——在每个残差流与残差流之间的线性变换（流与流之间的混合）</li>
+<li><strong>注意力残差</strong>：直接把每一层拿出来做加权，对所有历史层用一个注意力机制</li>
+</ul>
+<p>这个视角的价值在于把散落的改进排成了一条谱系：改 $M$ 就是改「历史信息以何种方式汇入当前层」——恒等累加、流间变换、层间注意力是三个由简到繁的答案。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：统一框架里残差改进的差异全在 $M$：单位阵累加 &#x2F; 流间变换 &#x2F; 层间注意力加权。</p>
+</blockquote>
+<hr>
+<h2 id="7-Block-wise-版：用块数换复杂度"><a href="#7-Block-wise-版：用块数换复杂度" class="headerlink" title="7. Block-wise 版：用块数换复杂度"></a>7. Block-wise 版：用块数换复杂度</h2><p>除了 full 形态，还有 <strong>block-wise（块级）的注意力残差</strong>：把总共 $L$ 层分为 $N$ 个块，每个块内部先用普通的加法做递归累加；块内仍然是递归的累加，但<strong>块与块之间</strong>做注意力检索。</p>
+<p>收益是工程性的：不管存储还是通信的复杂度，都从本来线性级别的 $O(L)$ 降低到块个数 $O(N)$。实验表明 $N&#x3D;8$ 的时候就已经接近 full attention residuals 的收益了——所以 block-wise 可以在低成本的情况下拿到大部分收益。这是一个典型的「精度换复杂度」旋钮：块内免费累加、块间才付注意力的钱。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：块内递归累加、块间注意力检索，复杂度 $O(L) \to O(N)$；$N&#x3D;8$ 已接近 full 的收益。</p>
+</blockquote>
+<hr>
+<h2 id="8-与-HC-mHC-对照与收尾"><a href="#8-与-HC-mHC-对照与收尾" class="headerlink" title="8. 与 HC&#x2F;mHC 对照与收尾"></a>8. 与 HC&#x2F;mHC 对照与收尾</h2><p>把三家放在一起看：HC 和 mHC 在某种意义上把残差流做复杂了——多路残差流、混合矩阵、流形约束；残差流很复杂，可能就违背了原本的初衷（那条恒等映射的高速公路）。而 Attention Residuals 走的是另一条路：不增加残差流的路数，而是把<strong>模型的深度这个维度也变成一个 Attention 的轴</strong>，让单条残差流里的历史信息按注意力加权汇入。</p>
+<p>视频最后过了三张结构图：传统残差连接（逐层直加）、full attention residuals（每层对全部历史层加权）、block-wise（一块一块，第 $N-1$ 块、第 $N-2$ 块之间做注意力）。结合本博客 mHc 分类下的两篇 mHC 解读正好凑成一张拼图：mHC 用双随机约束稳住多路混合，注意力残差用层间注意力替换无差别累加——两者都在回答同一个问题：残差这条高速公路，怎样才能又宽又稳还不堵车。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：HC&#x2F;mHC 加宽并约束残差流，注意力残差给深度轴装注意力；三条路线共用一个统一框架，区别仅在 $M$。</p>
+</blockquote>
+<h2 id="本讲知识地图"><a href="#本讲知识地图" class="headerlink" title="本讲知识地图"></a>本讲知识地图</h2><pre>
+<code class="mermaid">
+
+graph TD
+  R((注意力残差))
+  subgraph 问题
+    DIL[PreNorm 稀释] --&gt;|早期层被淹没| AR[注意力残差]
+    ID[恒等映射] --&gt;|保留直通梯度| AR
+  end
+  subgraph 形态
+    AR --&gt;|全历史加权| FULL[full 形态]
+    AR --&gt;|分块降复杂度| BW[块级注意力残差]
+    FULL -.-&gt;|N&#x3D;8 近似| BW
+  end
+  R --&gt; AR
+</code>
+</pre>
+
+<h2 id="本讲小结"><a href="#本讲小结" class="headerlink" title="本讲小结"></a>本讲小结</h2><table>
+<thead>
+<tr>
+<th>机制&#x2F;概念</th>
+<th>解决什么问题</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>层间注意力加权</td>
+<td>深度维度固定加法与序列&#x2F;专家维度不对称</td>
+<td>每层用偏好向量对历史层增量打分加权</td>
+</tr>
+<tr>
+<td>静态偏好向量</td>
+<td>输入依赖 query 更贵更串行</td>
+<td>ω 只与层有关，v 与输入有关，默认不输入依赖</td>
+</tr>
+<tr>
+<td>Block-wise 分块</td>
+<td>full 形态存储&#x2F;通信 O(L) 太贵</td>
+<td>块内累加块间注意力，O(N) 且 N&#x3D;8 接近 full</td>
+</tr>
+<tr>
+<td>统一框架 M</td>
+<td>残差改进各自为政</td>
+<td>恒等累加&#x2F;流间变换&#x2F;层间注意力只是 M 的不同</td>
+</tr>
+</tbody></table>
+<p><strong>学完能说的 3 句话：</strong></p>
+<ol>
+<li>注意力残差 &#x3D; 把注意力从 token 轴旋转 90 度到深度轴，用层间加权聚合替代无差别累加。</li>
+<li>它同时治两个病：深度维度的固定加法不对称，以及 PreNorm 稀释让早期层贡献衰减。</li>
+<li>block-wise 用块内累加+块间注意力把复杂度降到 O(N)，N&#x3D;8 即接近 full 收益；与 HC&#x2F;mHC 的区别在统一框架里只是 M 的不同。</li>
+</ol>
+<h2 id="概念卡片"><a href="#概念卡片" class="headerlink" title="概念卡片"></a>概念卡片</h2><h3 id="注意力残差"><a href="#注意力残差" class="headerlink" title="注意力残差"></a>注意力残差</h3><ul>
+<li>定义：在模型深度维度上做注意力、对历史层增量加权聚合而非无差别累加的残差改进</li>
+<li>出现：第 4 节「注意力残差：把注意力旋转 90 度」、第 6 节「统一框架：区别仅在 M」</li>
+<li>依赖：恒等映射</li>
+<li>易混：块级注意力残差——full 对全部历史层加权，block-wise 只在块间做注意力</li>
+</ul>
+<h3 id="PreNorm-稀释"><a href="#PreNorm-稀释" class="headerlink" title="PreNorm 稀释"></a>PreNorm 稀释</h3><ul>
+<li>定义：归一化使各层增量大小相近、早期层相对贡献随深度衰减、长距离信息难找回的现象</li>
+<li>出现：第 3 节「两大毛病：无差别相加与 PreNorm 稀释」、第 5 节「同构类比：RNN 到 Attention 的改进重演一遍」</li>
+<li>依赖：</li>
+<li>易混：注意力残差——稀释是病，注意力残差是药（加权让早期层可被重新关注）</li>
+</ul>
+<h3 id="块级注意力残差"><a href="#块级注意力残差" class="headerlink" title="块级注意力残差"></a>块级注意力残差</h3><ul>
+<li>定义：把 L 层分成 N 块、块内递归累加、块间注意力检索的低成本变体，复杂度 O(N)</li>
+<li>出现：第 7 节「Block-wise 版：用块数换复杂度」、第 8 节「与 HC&#x2F;mHC 对照与收尾」</li>
+<li>依赖：注意力残差</li>
+<li>易混：</li>
+</ul>
+<h3 id="恒等映射"><a href="#恒等映射" class="headerlink" title="恒等映射"></a>恒等映射</h3><ul>
+<li>定义：残差直通通路使梯度中含单位阵、浅层信号无损传到深层的性质</li>
+<li>出现：第 2 节「传统残差连接与递归展开」、第 8 节「与 HC&#x2F;mHC 对照与收尾」</li>
+<li>依赖：</li>
+<li>易混：注意力残差——加权聚合后直通项被替换，论文仍靠框架保留梯度通路的设计初衷</li>
+</ul>
+<h2 id="自测题（面试速答）"><a href="#自测题（面试速答）" class="headerlink" title="自测题（面试速答）"></a>自测题（面试速答）</h2><ol>
+<li>「把注意力机制旋转 90 度」具体指什么？作用在哪个维度上？（对应：注意力残差）</li>
+</ol>
+<p><strong>答案：</strong> 指注意力的作用对象从序列维度换成深度维度：原来的注意力横向地发生在 token 之间，旋转 90 度后发生在层与层之间——每一层不再把历史层增量无差别累加，而是先对每个历史层计算注意力分数再加权求和。公式上递归展开从 $h_L &#x3D; h_0 + \sum v_j$ 变成 $h_L &#x3D; \sum \alpha_{lj} v_j$，分数由该层静态偏好向量 $\omega_l$ 与输入相关的 $v_j$ 经 RMSNorm 后算得。所以旋转的不是网络结构图，而是「注意力打分发生在哪个轴上」。</p>
+<ol start="2">
+<li>PreNorm 稀释是什么？为什么它让长距离依赖难记？（对应：PreNorm 稀释）</li>
+</ol>
+<p><strong>答案：</strong> 它指每层往残差流加入的增量因归一化而大小相近，导致早期层的相对贡献随深度不断变小。比如到第 30 层时第 1 层的占比已经微乎其微，想找回早期信息就像在恒量注入的河流里捞第一滴墨水——长距离依赖因此难记、难取。这与 RNN 把全部历史压进一个状态被稀释是同构的问题；注意力残差的解法是不再压缩累加，而是让每层可以直接对早期层打高分重新取回。</p>
+<ol start="3">
+<li>Block-wise 注意力残差如何降低复杂度？N&#x3D;8 的实验说明了什么？（对应：块级注意力残差）</li>
+</ol>
+<p><strong>答案：</strong> 它把 L 层分成 N 个块：块内仍用普通加法递归累加（免费），只在块与块之间做注意力检索，于是存储与通信复杂度从线性的 $O(L)$ 降到块数个数的 $O(N)$。实验表明 N&#x3D;8 时收益已接近 full attention residuals，说明层间注意力的收益主要由「粗粒度的跨块检索」贡献，细到每层全连接式的加权并非必需——这是用少量精度换大幅工程成本的典型旋钮。</p>
+<ol start="4">
+<li>注意力残差为什么默认用静态偏好向量，而不是输入依赖的 query？（对应：注意力残差）</li>
+</ol>
+<p><strong>答案：</strong> 因为输入依赖版本虽然效果有微小提升，但需要用当前隐藏状态经一个额外可学习矩阵变换来生成 query，既更贵又让推理变成串行——本层的层间权重必须等当前状态算完才能产生，破坏了并行性。默认设计让偏好向量 ω 只与层有关、与 token 无关，而把输入相关性交给 v_j 一侧（不同 token 的历史增量本就不同），于是打分所需的静态部分可以预计算、并行执行。这是一个「微小精度换并行与便宜」的 deliberate 取舍，论文实验也确认提升幅度不值得代价。</p>
+<ol start="5">
+<li>传统残差的递归展开里，恒等映射出现在哪里？注意力残差替换累加后靠什么保住梯度通路？（对应：恒等映射）</li>
+</ol>
+<p><strong>答案：</strong> 恒等映射出现在递归展开的结构里：第 L 层等于浅层状态加上各层增量之和，求梯度时翻出单位阵 I，形成直通高速公路。注意力残差把无差别累加换成加权和后，直通项不再天然存在，风险是梯度通路被权重调制；论文的统一框架正是为此把各种改进定义在同一架构内对比 M 的选择，而 block-wise 版块内仍保留递归累加，等于在块内保留了恒等高速公路、只在块间做注意力——可以理解为把恒等映射从「全程直通」收缩为「块内直通」。这也是它与 HC&#x2F;mHC 共享的设计直觉：任何混合都不能彻底切断梯度直通。</p>
+<hr>
+<h2 id="视频时间索引"><a href="#视频时间索引" class="headerlink" title="视频时间索引"></a>视频时间索引</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=1">00:01</a> 1. 开场：Kimi 的技术报告与「旋转 90 度」的比喻</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=89">01:29</a> 2. 传统残差连接与递归展开</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=182">03:02</a> 3. 两大毛病：无差别相加与 PreNorm 稀释</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=303">05:03</a> 4. 注意力残差：把注意力旋转 90 度</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=452">07:32</a> 5. 同构类比：RNN 到 Attention 的改进重演一遍</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=570">09:30</a> 6. 统一框架：区别仅在 M</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=633">10:33</a> 7. Block-wise 版：用块数换复杂度</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1fNw9ziEYk?p=1&t=700">11:40</a> 8. 与 HC&#x2F;mHC 对照与收尾</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag"># 论文笔记</a>
+              <a href="/tags/attnres/" rel="tag"># attnres</a>
+              <a href="/tags/Kimi/" rel="tag"># Kimi</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/17/deepseek-mhc-why-4way-residuals-dont-blow-up/" rel="prev" title="mHC 残差扩 4 路为何训练不炸：凸组合直觉、三大误区与验收闭环（面试解读）">
+                  <i class="fa fa-angle-left"></i> mHC 残差扩 4 路为何训练不炸：凸组合直觉、三大误区与验收闭环（面试解读）
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">高鸿烨</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script>
+// 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+// 背景通过 CSS 变量 --site-bg 挂在 body::before 固定层上（见 styles.styl）
+(function () {
+  var bgs = [
+    '/images/bg/bg-1.svg',
+    '/images/bg/bg-2.svg',
+    '/images/bg/bg-3.svg',
+    '/images/bg/bg-4.svg',
+    '/images/bg/bg-5.svg',
+    '/images/bg/bg-6.svg'
+  ];
+  var current = 0;
+  // 预加载，避免首次点击时闪白
+  bgs.forEach(function (u) { var img = new Image(); img.src = u; });
+  document.addEventListener('click', function () {
+    var next;
+    do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
+    current = next;
+    document.documentElement.style.setProperty('--site-bg', 'url(' + bgs[current] + ')');
+  });
+})();
+</script>
+
+</body>
+</html>
