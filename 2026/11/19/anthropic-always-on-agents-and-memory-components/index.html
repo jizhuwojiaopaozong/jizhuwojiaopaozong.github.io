@@ -28,7 +28,7 @@
 <meta property="og:description" content="整合解读 Anthropic 两篇文章：always-on agent 的睡眠-run 循环与事件收件箱&#x2F;定时器&#x2F;记忆&#x2F;权限&#x2F;发件箱五原语，agent 记忆四层层级与 dreaming 巩固机制，及两者的串联架构">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-11-19T02:15:00.000Z">
-<meta property="article:modified_time" content="2026-11-19T02:14:31.990Z">
+<meta property="article:modified_time" content="2026-11-19T02:15:17.692Z">
 <meta property="article:author" content="高鸿烨">
 <meta property="article:tag" content="agent">
 <meta property="article:tag" content="Anthropic">
@@ -278,7 +278,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2026-11-19 10:15:00 / 修改时间：10:14:31" itemprop="dateCreated datePublished" datetime="2026-11-19T10:15:00+08:00">2026-11-19</time>
+      <time title="创建时间：2026-11-19 10:15:00 / 修改时间：10:15:17" itemprop="dateCreated datePublished" datetime="2026-11-19T10:15:00+08:00">2026-11-19</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -395,6 +395,8 @@
 </blockquote>
 <hr>
 <h2 id="10-收尾：落地检查清单"><a href="#10-收尾：落地检查清单" class="headerlink" title="10. 收尾：落地检查清单"></a>10. 收尾：落地检查清单</h2><p>把两篇的全部纪律压成一张清单：持久 inbox + 快速 ACK + 单活跃 worker + 事件批量合并；定时器独立存储、只投事件；记忆独立持久存储、只存不可再查者、索引常载详情按需；凭据环境外代理、高风险分类器、审批 deferred 化；outbox 先安静后挣注意力、节奏靠 evals；dreaming 定期跑、对着 transcripts 纠错、wiki 修剪防等大地图；注入层配额 200 行&#x2F;25KB；对强模型只说记忆为何、不规定怎么用。</p>
+<p>如果资源只够先做三件事，优先级是：inbox 持久化（丢一个事件就是一次不可恢复的信任损失）、记忆索引常载+详情按需（上下文预算决定 run 的智商上限）、注入层配额（一条错笔记污染所有会话，且越长越不遵循）。其余项可以随规模补齐，但这三项是循环能转起来的前提。</p>
+<p>清单之外还有一个元纪律：每次事故后回问「它属于十项里的哪一项失效」——两篇文章的全部最佳实践都来自真实故障模式（竞争 run、崩溃丢事件、记忆过期、wiki 互覆、噪音消息），检查清单的价值在于把故障模式变成验收项。</p>
 <blockquote>
 <p><strong>记住这个就够了</strong>：清单十项全绿，才谈得上「always-on」；缺任何一项，循环都会在某个深夜以丢事件、错记忆或噪音消息的形式讨债。</p>
 </blockquote>
