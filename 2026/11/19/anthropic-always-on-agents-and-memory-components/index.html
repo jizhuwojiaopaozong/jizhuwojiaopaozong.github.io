@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jizhuwojiaopaozong.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="整合解读 Anthropic 两篇文章：always-on agent 的睡眠-run 循环与事件收件箱&#x2F;定时器&#x2F;记忆&#x2F;权限&#x2F;发件箱五原语，agent 记忆四层层级与 dreaming 巩固机制，及两者的串联架构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Always-on Agents 与 Agent Memory：Anthropic 两张蓝图——run 循环、五原语与 dreaming 记忆层级">
+<meta property="og:url" content="https://jizhuwojiaopaozong.github.io/2026/11/19/anthropic-always-on-agents-and-memory-components/index.html">
+<meta property="og:site_name" content="Gao HongYe">
+<meta property="og:description" content="整合解读 Anthropic 两篇文章：always-on agent 的睡眠-run 循环与事件收件箱&#x2F;定时器&#x2F;记忆&#x2F;权限&#x2F;发件箱五原语，agent 记忆四层层级与 dreaming 巩固机制，及两者的串联架构">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-19T02:15:00.000Z">
+<meta property="article:modified_time" content="2026-11-19T02:14:31.990Z">
+<meta property="article:author" content="高鸿烨">
+<meta property="article:tag" content="agent">
+<meta property="article:tag" content="Anthropic">
+<meta property="article:tag" content="架构解读">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://jizhuwojiaopaozong.github.io/2026/11/19/anthropic-always-on-agents-and-memory-components/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://jizhuwojiaopaozong.github.io/2026/11/19/anthropic-always-on-agents-and-memory-components/","path":"2026/11/19/anthropic-always-on-agents-and-memory-components/","title":"Always-on Agents 与 Agent Memory：Anthropic 两张蓝图——run 循环、五原语与 dreaming 记忆层级"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Always-on Agents 与 Agent Memory：Anthropic 两张蓝图——run 循环、五原语与 dreaming 记忆层级 | Gao HongYe</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/next-theme-pjax/0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/medium-zoom/1.1.0/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pangu/7.2.1/pangu.umd.js" integrity="sha256-kRsxecBnwG6mULFPe2E6UKnNm8XfDOuDwCOprjLZuX8=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script><script src="/js/bookmark.js" defer></script><script src="/js/pjax.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"/vendor/mermaid/mermaid.min.js"}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","display_overflow":"scroll","js":{"url":"/vendor/mathjax/es5/tex-mml-chtml.js"},"font_path":"/vendor/mathjax/es5/output/chtml/fonts/woff-v2/"}</script>
+<script src="/js/third-party/math/mathjax.js" defer></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Gao HongYe</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">ghy Blogs</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%A4%E7%AF%87%E6%96%87%E7%AB%A0%EF%BC%8C%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%EF%BC%9A%E6%97%A0%E4%BA%BA%E5%80%BC%E5%AE%88%E5%9C%B0%E9%95%BF%E6%9C%9F%E8%BF%90%E8%A1%8C"><span class="nav-text">1. 两篇文章，一个问题：无人值守地长期运行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Always-on-%E6%98%AF%E9%94%99%E8%A7%89%EF%BC%9A%E7%9D%A1%E7%9C%A0-%E8%BF%90%E8%A1%8C%E5%BE%AA%E7%8E%AF"><span class="nav-text">2. Always-on 是错觉：睡眠-运行循环</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%BA%94%E5%8E%9F%E8%AF%AD%E4%B8%8A%EF%BC%9A%E4%BA%8B%E4%BB%B6%E6%94%B6%E4%BB%B6%E7%AE%B1%E4%B8%8E%E5%AE%9A%E6%97%B6%E5%99%A8"><span class="nav-text">3. 五原语上：事件收件箱与定时器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BA%94%E5%8E%9F%E8%AF%AD%E4%B8%8B%EF%BC%9A%E6%9D%83%E9%99%90%E4%B8%8E%E5%8F%91%E4%BB%B6%E7%AE%B1"><span class="nav-text">4. 五原语下：权限与发件箱</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%AE%B0%E5%BF%86%E5%B7%A5%E7%A8%8B%EF%BC%9A%E5%8F%AA%E5%AD%98%E6%9F%A5%E4%B8%8D%E5%9B%9E%E6%9D%A5%E7%9A%84%E4%B8%9C%E8%A5%BF"><span class="nav-text">5. 记忆工程：只存查不回来的东西</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%AE%B0%E5%BF%86%E5%B1%82%E7%BA%A7%E4%B8%8E-dreaming%EF%BC%9Aagent-%E7%9A%84%E7%9D%A1%E7%9C%A0"><span class="nav-text">6. 记忆层级与 dreaming：agent 的睡眠</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%86%99%E4%BB%80%E4%B9%88%E6%98%AF%E4%B8%80%E7%A7%8D%E9%A2%84%E6%B5%8B%EF%BC%9A%E6%98%BE%E8%91%97%E6%80%A7%E4%B8%8E%E5%AD%A6%E4%B9%A0%E9%97%AD%E7%8E%AF"><span class="nav-text">7. 写什么是一种预测：显著性与学习闭环</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%95%B0%E5%AD%97%E4%B8%8E%E8%BE%B9%E7%95%8C%EF%BC%9Awiki-%E4%BD%95%E6%97%B6%E6%9C%89%E6%95%88%E4%BD%95%E6%97%B6%E5%A4%B1%E6%95%88"><span class="nav-text">8. 数字与边界：wiki 何时有效何时失效</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E4%B8%B2%E8%81%94%E4%B8%A4%E5%BC%A0%E8%93%9D%E5%9B%BE%EF%BC%9Adreaming-%E5%B0%B1%E6%98%AF%E5%BE%AA%E7%8E%AF%E9%87%8C%E7%9A%84%E4%B8%80%E7%A7%8D-run"><span class="nav-text">9. 串联两张蓝图：dreaming 就是循环里的一种 run</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E6%94%B6%E5%B0%BE%EF%BC%9A%E8%90%BD%E5%9C%B0%E6%A3%80%E6%9F%A5%E6%B8%85%E5%8D%95"><span class="nav-text">10. 收尾：落地检查清单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE"><span class="nav-text">本讲知识地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93"><span class="nav-text">本讲小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87"><span class="nav-text">概念卡片</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#run-%E5%BE%AA%E7%8E%AF"><span class="nav-text">run 循环</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8B%E4%BB%B6%E6%94%B6%E4%BB%B6%E7%AE%B1"><span class="nav-text">事件收件箱</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%B0%E5%BF%86%E5%B1%82%E7%BA%A7"><span class="nav-text">记忆层级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dreaming"><span class="nav-text">dreaming</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%BE%E8%91%97%E6%80%A7%E5%88%A4%E6%96%AD"><span class="nav-text">显著性判断</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E6%B5%8B%E9%A2%98%EF%BC%88%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94%EF%BC%89"><span class="nav-text">自测题（面试速答）</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="高鸿烨"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">高鸿烨</p>
+  <div class="site-description" itemprop="description">Gao HongYe 的个人博客</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jizhuwojiaopaozong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:m15944834309@163.com" title="E-Mail → mailto:m15944834309@163.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://github.com/jizhuwojiaopaozong" title="https:&#x2F;&#x2F;github.com&#x2F;jizhuwojiaopaozong" rel="noopener" target="_blank">Gao HongYe</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="https://theme-next.js.org/" title="https:&#x2F;&#x2F;theme-next.js.org" rel="noopener" target="_blank">NexT</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jizhuwojiaopaozong.github.io/2026/11/19/anthropic-always-on-agents-and-memory-components/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="高鸿烨">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Gao HongYe">
+      <meta itemprop="description" content="Gao HongYe 的个人博客">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Always-on Agents 与 Agent Memory：Anthropic 两张蓝图——run 循环、五原语与 dreaming 记忆层级 | Gao HongYe">
+      <meta itemprop="description" content="整合解读 Anthropic 两篇文章：always-on agent 的睡眠-run 循环与事件收件箱&#x2F;定时器&#x2F;记忆&#x2F;权限&#x2F;发件箱五原语，agent 记忆四层层级与 dreaming 巩固机制，及两者的串联架构">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Always-on Agents 与 Agent Memory：Anthropic 两张蓝图——run 循环、五原语与 dreaming 记忆层级
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2026-11-19 10:15:00 / 修改时间：10:14:31" itemprop="dateCreated datePublished" datetime="2026-11-19T10:15:00+08:00">2026-11-19</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/agent/" itemprop="url" rel="index"><span itemprop="name">agent</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+            <div class="post-description">整合解读 Anthropic 两篇文章：always-on agent 的睡眠-run 循环与事件收件箱/定时器/记忆/权限/发件箱五原语，agent 记忆四层层级与 dreaming 巩固机制，及两者的串联架构</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>核心主线：Anthropic 两张蓝图拼出无人值守 agent 的完整骨架——《Building always-on agents》管「何时醒、带什么走、怎么送达」（run 循环 + 五原语），《The components of agent memory》管「记什么、怎么纠、怎么组织」（记忆层级 + dreaming）；后者其实是前者循环里一种特殊的定时 run。<br>本讲目标：读完你能回答「always-on 为什么是错觉、run 与 session 各是什么」「事件收件箱为什么必须存在、四条最佳实践各防什么故障」「记忆四层层级与 dreaming 的五种作用」「为什么固定记录规则反而伤害强模型」<br>课程来源：Building always-on agents（claude.com，William Hu，2026-11-13）与 The components of agent memory（anthropic.com&#x2F;research，2026）两篇文章的整合解读</p>
+</blockquote>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#1-%E4%B8%A4%E7%AF%87%E6%96%87%E7%AB%A0%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E6%97%A0%E4%BA%BA%E5%80%BC%E5%AE%88%E5%9C%B0%E9%95%BF%E6%9C%9F%E8%BF%90%E8%A1%8C">1. 两篇文章，一个问题：无人值守地长期运行</a></li>
+<li><a href="#2-always-on-%E6%98%AF%E9%94%99%E8%A7%89%E7%9D%A1%E7%9C%A0-%E8%BF%90%E8%A1%8C%E5%BE%AA%E7%8E%AF">2. Always-on 是错觉：睡眠-运行循环</a></li>
+<li><a href="#3-%E4%BA%94%E5%8E%9F%E8%AF%AD%E4%B8%8A%E4%BA%8B%E4%BB%B6%E6%94%B6%E4%BB%B6%E7%AE%B1%E4%B8%8E%E5%AE%9A%E6%97%B6%E5%99%A8">3. 五原语上：事件收件箱与定时器</a></li>
+<li><a href="#4-%E4%BA%94%E5%8E%9F%E8%AF%AD%E4%B8%8B%E6%9D%83%E9%99%90%E4%B8%8E%E5%8F%91%E4%BB%B6%E7%AE%B1">4. 五原语下：权限与发件箱</a></li>
+<li><a href="#5-%E8%AE%B0%E5%BF%86%E5%B7%A5%E7%A8%8B%E5%8F%AA%E5%AD%98%E6%9F%A5%E4%B8%8D%E5%9B%9E%E6%9D%A5%E7%9A%84%E4%B8%9C%E8%A5%BF">5. 记忆工程：只存查不回来的东西</a></li>
+<li><a href="#6-%E8%AE%B0%E5%BF%86%E5%B1%82%E7%BA%A7%E4%B8%8E-dreamingagent-%E7%9A%84%E7%9D%A1%E7%9C%A0">6. 记忆层级与 dreaming：agent 的睡眠</a></li>
+<li><a href="#7-%E5%86%99%E4%BB%80%E4%B9%88%E6%98%AF%E4%B8%80%E7%A7%8D%E9%A2%84%E6%B5%8B%E6%98%BE%E8%91%97%E6%80%A7%E4%B8%8E%E5%AD%A6%E4%B9%A0%E9%97%AD%E7%8E%AF">7. 写什么是一种预测：显著性与学习闭环</a></li>
+<li><a href="#8-%E6%95%B0%E5%AD%97%E4%B8%8E%E8%BE%B9%E7%95%8Cwiki-%E4%BD%95%E6%97%B6%E6%9C%89%E6%95%88%E4%BD%95%E6%97%B6%E5%A4%B1%E6%95%88">8. 数字与边界：wiki 何时有效何时失效</a></li>
+<li><a href="#9-%E4%B8%B2%E8%81%94%E4%B8%A4%E5%BC%A0%E8%93%9D%E5%9B%BEdreaming-%E5%B0%B1%E6%98%AF%E5%BE%AA%E7%8E%AF%E9%87%8C%E7%9A%84%E4%B8%80%E7%A7%8D-run">9. 串联两张蓝图：dreaming 就是循环里的一种 run</a></li>
+<li><a href="#10-%E6%94%B6%E5%B0%BE%E8%90%BD%E5%9C%B0%E6%A3%80%E6%9F%A5%E6%B8%85%E5%8D%95">10. 收尾：落地检查清单</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E7%9F%A5%E8%AF%86%E5%9C%B0%E5%9B%BE">本讲知识地图</a></li>
+<li><a href="#%E6%9C%AC%E8%AE%B2%E5%B0%8F%E7%BB%93">本讲小结</a></li>
+<li><a href="#%E6%A6%82%E5%BF%B5%E5%8D%A1%E7%89%87">概念卡片</a></li>
+<li><a href="#%E8%87%AA%E6%B5%8B%E9%A2%98%E9%9D%A2%E8%AF%95%E9%80%9F%E7%AD%94">自测题（面试速答）</a></li>
+</ul>
+<hr>
+<h2 id="1-两篇文章，一个问题：无人值守地长期运行"><a href="#1-两篇文章，一个问题：无人值守地长期运行" class="headerlink" title="1. 两篇文章，一个问题：无人值守地长期运行"></a>1. 两篇文章，一个问题：无人值守地长期运行</h2><p>把两篇文章放在一起读，会发现它们回答的是同一个问题的两半：如何让 agent 在没有人盯着的情况下长期可靠地工作。第一篇给的是<strong>时间与控制的骨架</strong>——agent 何时被唤醒（事件收件箱、定时器）、每次运行携带什么（记忆）、行动边界在哪（权限）、工作结果如何到达用户（发件箱）。第二篇给的是<strong>记忆的骨架</strong>——什么值得写下来（显著性）、写错或写旧了怎么办（dreaming 纠正）、笔记如何长成可导航的知识（wiki 等表示）、哪些内容配得上每次会话都注入（层级顶端）。</p>
+<p>两文的交汇点在于：记忆不是独立子系统，而是 run 循环里「读基线→行动→写回」的那一环；而 dreaming 本身也可以被实现为一种由定时器触发的、静默的特殊 run。先拆开看，再合起来看。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：第一篇管循环与边界，第二篇管记忆与反思；合起来才是完整的 always-on 架构。</p>
+</blockquote>
+<hr>
+<h2 id="2-Always-on-是错觉：睡眠-运行循环"><a href="#2-Always-on-是错觉：睡眠-运行循环" class="headerlink" title="2. Always-on 是错觉：睡眠-运行循环"></a>2. Always-on 是错觉：睡眠-运行循环</h2><p>「Always-on」描述的是用户体验，不是进程状态：agent 大部分时间在<strong>睡觉</strong>（不花 token），周期性地醒来工作。每一段工作叫一次 <strong>run</strong>：接收一个事件、完成任务、把发生的事情写回存储；run 发生在 <strong>session</strong> 里，session 就是消息与工具调用的转录。run 结束 agent 回去睡，循环无限重复——「永远在线」的感觉来自循环不停，而不是进程不眠。</p>
+<p>这个形态为什么现在才复活？文章给了两个模型侧的理由：一是<strong>判断力</strong>——新模型更可靠地理解用户意图、知道何时该来确认；二是<strong>智能变便宜</strong>，且长程任务受益最大——在一个长程编码基准上 Opus 5.5 每解决一个任务的成本比 Opus 5 低 78%，而普通负载只低 40%。换句话说，always-on 的可行性首先是经济学问题：睡眠时零成本，醒来时每次 run 的智力单价在快速下降。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：run &#x3D; 事件→工作→写回；session &#x3D; 转录；always-on &#x3D; 短 run 的无限循环 + 睡眠期零成本。</p>
+</blockquote>
+<hr>
+<h2 id="3-五原语上：事件收件箱与定时器"><a href="#3-五原语上：事件收件箱与定时器" class="headerlink" title="3. 五原语上：事件收件箱与定时器"></a>3. 五原语上：事件收件箱与定时器</h2><p><strong>事件收件箱（event inbox）</strong> 解决「谁来叫醒 agent」。最诱人的做法是让每个事件源直接调用 agent，但有两个致命故障模式：两个事件同时到达会启动<strong>相互竞争的 run</strong>；进程崩溃会<strong>彻底丢掉事件</strong>。于是架构变成三件套：一个持久化事件列表（通常是数据库表，每个事件追加一行、记录状态、按源端唯一标识去重）、一个 handler（HTTP 端点，只负责把事件写进列表）、一个 worker（后台服务，读列表、启动 run、等 run 结束、把事件标记完成）。建议从每用户一个 inbox 起步，需要更高并行度再拆。</p>
+<p>四条最佳实践各自对应一种故障：handler <strong>快速 ACK</strong>（webhook 提供方把慢响应当失败；prompt 注入这类深度检查留给 run 内做）；<strong>inbox 是唯一事实源</strong>（worker 醒来先拉最新事件，于是 worker 死在 run 中途时新 worker 能捡起同一事件重试）；<strong>一个 inbox 同时只有一个活跃 worker</strong>（防止两个 run 重复劳动或互相覆盖；run 中途来新事件有三种策略：推到下一次 run、折进当前 run、中断重启）；<strong>worker 批量合并待处理事件</strong>（用户连发多条消息合并成一次 run，只回一次）。</p>
+<p><strong>定时器（timers）</strong> 与收件箱配合产出「主动性」，分两类：follow-up 是 agent 给自己设的截止（比如稍后检查对方是否回复），schedule 是用户设的周期任务（比如每日简报）。关键设计：定时器住在<strong>独立于 inbox 的持久表</strong>里——inbox 只放「已经可以干活」的事件。scheduler 按固定间隔轮询：扫出到期的定时器→按类型更新（follow-up 标记完成；schedule 把到期时间推到下一次）→往 inbox 加一个事件并唤醒 worker。定时器自己<strong>从不直接启动 run</strong>，它只是往 inbox 投事件——这条纪律保证了唤醒路径只有一条。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：inbox 三件套 + 四实践防竞争与丢事件；定时器独立存储、只投事件不启动 run，唤醒路径唯一。</p>
+</blockquote>
+<hr>
+<h2 id="4-五原语下：权限与发件箱"><a href="#4-五原语下：权限与发件箱" class="headerlink" title="4. 五原语下：权限与发件箱"></a>4. 五原语下：权限与发件箱</h2><p><strong>权限（permissions）</strong> 是 always-on agent 风险最集中处：一次 run 持有用户的访问权限，且按设计无人值守。每个工具调用都要三选一：自己继续、阻断、或等待批准。三个组件：凭据存储用<strong>环境外代理</strong>模式——agent 发出不含凭据的请求，代理在转发前注入真实凭据，凭据从不进入 agent 环境；<strong>auto mode</strong> 用分类器审查高风险动作、阻断被判定危险的调用让 Claude 换更安全的路径，但最重要的决定仍留给人；<strong>deferred tool calls</strong> 是最精巧的闭环——hook 把某个工具调用挂起，run 结束、session 保存在调用中途，请求以交互卡片形式展示给用户，用户的回答<strong>作为 inbox 里的一个事件</strong>回来，启动新 run 恢复被保存的 session；等待期间 worker 可以处理其他事件，agent 不被阻塞。注意这个设计把「等人」变成了「睡觉」：审批等待不占用 run。</p>
+<p><strong>发件箱（outbox）</strong> 对应输出侧：后台工作的 agent 不该把逐步推理流式倒给用户，用户要的是结果加少量细节。一次 run 有三种结束方式：往 outbox 发消息、决定什么都不发、或用 deferred tool call 请求批准&#x2F;补充输入。多数 agent 一个「send」工具就够；只有需要<strong>控制消息节奏</strong>或<strong>从发送错误中恢复</strong>时才建正式 outbox——一张出站消息表加一个 dispatcher 后台服务（与 inbox&#x2F;worker 对称）。节奏靠 evals 调：发太多是噪音，发太少漏事；实践建议<strong>先安静，再逐渐挣得用户的注意力</strong>。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：凭据走环境外代理、高风险走分类器、审批走 deferred call 变事件；输出侧先安静、按需建 outbox。</p>
+</blockquote>
+<hr>
+<h2 id="5-记忆工程：只存查不回来的东西"><a href="#5-记忆工程：只存查不回来的东西" class="headerlink" title="5. 记忆工程：只存查不回来的东西"></a>5. 记忆工程：只存查不回来的东西</h2><p>第一篇对记忆的工程原则只有一句狠话：<strong>memory 只放 agent 无法再次查到的东西</strong>；已经活在别的系统里的（比如 issue tracker），存<strong>指针</strong>而不是副本。记忆要有自己的存储，目录映射到持久化（数据库或对象存储），保证记忆比 worker 活得更久。</p>
+<p>四类记忆各有加载策略：</p>
+<ul>
+<li><strong>用户指令</strong>：关于 agent 行为的指示，独立文件，<strong>每次 run 开头加载</strong>——用户不会总在旁边纠偏，指令必须跨 run 携带</li>
+<li><strong>用户笔记</strong>：关于用户本人的所学（角色、偏好、纠正）；起步一个文件，长大后拆成多个小文件，<strong>每次 run 只加载索引</strong>，需要细节时再拉单个文件进上下文</li>
+<li><strong>过往消息</strong>：记录已经告诉过用户什么，避免重复；独立文件每次加载，或由 worker 载入最近几条消息</li>
+<li><strong>任务进度</strong>：每个进行中任务一个进度文件（已做&#x2F;待做），新 run 读它即可接续；同样<strong>索引常载、详情按需</strong></li>
+</ul>
+<p>「索引常载、详情按需」是贯穿两篇文章的记忆经济学：上下文是稀缺资源，常驻的只能是地图，不能是领土。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：存不可再查者、其余存指针；四类记忆两种加载策略（常载 vs 索引+按需）。</p>
+</blockquote>
+<hr>
+<h2 id="6-记忆层级与-dreaming：agent-的睡眠"><a href="#6-记忆层级与-dreaming：agent-的睡眠" class="headerlink" title="6. 记忆层级与 dreaming：agent 的睡眠"></a>6. 记忆层级与 dreaming：agent 的睡眠</h2><p>第二篇给出四层记忆层级（自底向上）：<strong>transcripts</strong>（可搜索的事件日志）→ <strong>memory notes</strong>（Claude 写下的显著观察）→ <strong>memory representations</strong>（如 wiki 这类组织化表示）→ <strong>injected context</strong>（每次会话开头预载的上下文）。并明确划界：这里说的 memory 不含权重改变、不含单会话内的 in-context learning、不含 compaction 摘要——它是<strong>跨会话留存、以可读上下文形式存在</strong>的经验知识。</p>
+<p>生物学类比是设计直觉的来源：海马体在经历发生的当下快速捕获记忆，而巩固（consolidation）主要发生在<strong>离线时段</strong>——睡眠与静息中海马体重放近期经历，把经验蒸馏进存储知识的新皮层。Agent 的对应物：transcripts 是海马体的原始捕获，<strong>dreaming</strong> 是离线重放与巩固——利用交互间的空闲时间反思日志、纠正错误、产出新笔记与新表示（思路源自 Letta 与 UC Berkeley 的 sleep-time compute）。层级图上 dreaming 的箭头从 transcripts 指向上面每一层，并在相邻上层之间双向——它既能从原始日志提炼笔记，也能在笔记、表示、注入层之间搬运和修剪。</p>
+<p>Dreaming 的五种作用在后文逐一有实验支撑：<strong>纠正</strong>错误笔记、<strong>构建</strong>新表示（wiki）、<strong>提升</strong>笔记到注入层、<strong>聚焦</strong>记忆服务于特定目标、<strong>填补</strong>会话遗留的缺口（如悬空链接）。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：四层层级 + 离线巩固：dreaming 把「当下写的笔记」变成「经得起未来信任的知识」。</p>
+</blockquote>
+<hr>
+<h2 id="7-写什么是一种预测：显著性与学习闭环"><a href="#7-写什么是一种预测：显著性与学习闭环" class="headerlink" title="7. 写什么是一种预测：显著性与学习闭环"></a>7. 写什么是一种预测：显著性与学习闭环</h2><p>「记忆偶尔是一种预测」：写下一条规则，是预测这个模式还会相关；写下一条已验证事实，是预测未来会话想直接依赖它而不再复核。于是<strong>显著性判断</strong>成为记忆系统的第一能力——而难处在于：写笔记的当下并不知道未来需要什么。</p>
+<p>CL-Bench 1.0 的数据库任务展示了学习闭环的模型阶梯（每问一个新会话 + 跨会话记忆目录）：答错→记录失败→提出理论→验证理论→沉淀为规则。各代模型停在阶梯不同位置：Sonnet 4.6 只到「提出理论」，记忆目录里散落着未验证的猜测（0.330→0.364）；Opus 4.7 把笔记 consolidat 成单一参考文档并标记已查&#x2F;未查（0.383→0.700）；Sonnet 5 会在评分后标记 confirmed 并写纠正（0.644→0.833）；Opus 5 第一个<strong>闭环</strong>——条目含规则、规则的依据、过往答案与陷阱警告（0.564→0.828）；Opus 5.5 与 Sonnet 5.5 同样闭环（0.655→0.838、0.644→0.833）。</p>
+<p>Pokémon Red 实验则考「什么值得记」：Sonnet 3.7 假设一切都可能重要，无差别写入——413 个文件、225 个文件夹、约 97.8 万字符，换 1 枚徽章；因为游戏状态 constantly 变化，详尽记录持续过期，agent 花越来越多时间翻记忆而非玩游戏（约第 10000 步时它用 17 步创建 6 个文件、删除 9 个、游戏内零动作）。Fable 5 只写 9 个文件加一个 global.md 仪表盘（当前目标、道馆计划、自用记忆规则），4.3 万字符，4 枚徽章——它只记<strong>游戏不会告诉它的东西</strong>（策略、计划、验证过的规则），屏幕上每回合能读到的（钱、位置）一律不存。Opus 5.5 同样小文件夹策略并通关。</p>
+<p>引导原则因此很反直觉：<strong>告诉 Claude 记忆是为什么，但别规定怎么用</strong>。固定规则甚至有害：「只记录失败」让 Opus 5 的记忆增益 −0.234、Opus 4.7 −0.150——强模型的显著性自由裁量胜过预设规则。引导对老模型帮助最大：提示 Sonnet 4.6 先读记忆、再显式验证理论，分数几乎翻倍（0.364→0.641）；而 Sonnet 5 不需要提示就 9&#x2F;10 次主动读记忆。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：写记忆&#x3D;下预测注；显著性靠模型自由裁量（强模型），固定规则反噬；只记查不回来的、会过期的不记。</p>
+</blockquote>
+<hr>
+<h2 id="8-数字与边界：wiki-何时有效何时失效"><a href="#8-数字与边界：wiki-何时有效何时失效" class="headerlink" title="8. 数字与边界：wiki 何时有效何时失效"></a>8. 数字与边界：wiki 何时有效何时失效</h2><p>Dreaming 构建表示的代表是 <strong>wiki</strong>：Claude 自写自维护的互链页面集合，链接构成导航地图。Stainless 语料（约 35 万文件、约 4.2 亿 token）上 128 个会话的 dreaming 把 25 问的得分从 13% 拉到 48%（仅 wiki）；wiki+搜索从 54% 到 61%，而仅搜索持平在 53%——<strong>表示与检索互补而非替代</strong>，且 wiki+搜索每问省约 2 万 token。wiki 图从 2 会话的 103 页&#x2F;766 链长到 128 会话的 222 页&#x2F;12893 链。</p>
+<p>何时有效有清晰画像：Harvey LAB 合并案中 24 问过半需要<strong>跨文档组合</strong>加判断&#x2F;计算，wiki 87% vs 仅搜索 73%；而当评分标准大多能在<strong>单个文档</strong>里文本搜到时，wiki 无增益。失效模式同样鲜明：一个任务里 wiki 长到比语料还大（10 文档 115KB → wiki 68 页 203KB，1.77 倍）——Borges 笔下与帝国等大的地图：<strong>什么都没抽象</strong>。另一类失效是协作写坏：四个 agent 同时写共享的条款表、互相覆盖，57 个评分事实只活下 41 个（72%）；让 Claude 反思失败→改指令→重建 wiki 的循环发现「条款须逐字引用、每合同独立页」后，57&#x2F;57 全活（100%）。</p>
+<p>注入层（层级顶端）的纪律：注入的记忆每次会话都花 token，一条错笔记会被带进<strong>每个</strong>会话，且加载不等于遵循（Claude Code 文档警告指令文件越长遵循率越低）。所以顶端必须保持小：Claude Code auto memory 每次只载 MEMORY.md 的前 200 行或 25KB 作为索引头；dreaming 的大量工作正是把细节往下层搬、只留链接。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：wiki 赢在跨文档组合、输给单文档可搜与「等大地图」；注入层配额化（200 行&#x2F;25KB），dreaming 负责修剪。</p>
+</blockquote>
+<hr>
+<h2 id="9-串联两张蓝图：dreaming-就是循环里的一种-run"><a href="#9-串联两张蓝图：dreaming-就是循环里的一种-run" class="headerlink" title="9. 串联两张蓝图：dreaming 就是循环里的一种 run"></a>9. 串联两张蓝图：dreaming 就是循环里的一种 run</h2><p>把第二篇塞回第一篇的循环，架构立刻自洽：dreaming 不过是一次<strong>由定时器触发的特殊 run</strong>——事件来自 scheduler（而非用户或 webhook），session 里读的是 transcripts 与现有记忆（对应「读基线」），写回的是笔记&#x2F;wiki&#x2F;注入层（对应「更新记忆」），outbox 通常静默（对应「决定什么都不发」）。它同样享受 inbox 的持久化与单 worker 纪律，同样受权限约束（dreaming 不该有对外动作的凭据）。</p>
+<p>反过来，第一篇的记忆四分类也能在层级里定位：用户指令与索引属于<strong>注入层</strong>（每次 run 开头加载），用户笔记与任务进度属于 <strong>notes 层</strong>（索引常载、详情按需），过往消息可由 transcripts 层兜底。deferred tool call 则是两篇共同隐含的「人在环中」接缝：把审批变成 inbox 事件，等于承认<strong>有些显著性只有人类能判断</strong>——与第二篇「最重要决定仍需人工审查」呼应。</p>
+<p>由此得到一个可操作的架构命题：always-on agent 的质量上限不取决于单次 run 的智力，而取决于<strong>睡眠期把经验整理成什么</strong>——循环提供原料（transcripts），dreaming 提供巩固，注入层提供起跑线；三者配比就是记忆系统的调参空间（dreaming 频率、注入配额、wiki 修剪力度）。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：dreaming &#x3D; 定时器触发的静默 run；记忆四分类 &#x3D; 层级四层的工程实例；人在环中 &#x3D; deferred call 事件化。</p>
+</blockquote>
+<hr>
+<h2 id="10-收尾：落地检查清单"><a href="#10-收尾：落地检查清单" class="headerlink" title="10. 收尾：落地检查清单"></a>10. 收尾：落地检查清单</h2><p>把两篇的全部纪律压成一张清单：持久 inbox + 快速 ACK + 单活跃 worker + 事件批量合并；定时器独立存储、只投事件；记忆独立持久存储、只存不可再查者、索引常载详情按需；凭据环境外代理、高风险分类器、审批 deferred 化；outbox 先安静后挣注意力、节奏靠 evals；dreaming 定期跑、对着 transcripts 纠错、wiki 修剪防等大地图；注入层配额 200 行&#x2F;25KB；对强模型只说记忆为何、不规定怎么用。</p>
+<blockquote>
+<p><strong>记住这个就够了</strong>：清单十项全绿，才谈得上「always-on」；缺任何一项，循环都会在某个深夜以丢事件、错记忆或噪音消息的形式讨债。</p>
+</blockquote>
+<h2 id="本讲知识地图"><a href="#本讲知识地图" class="headerlink" title="本讲知识地图"></a>本讲知识地图</h2><pre>
+<code class="mermaid">
+
+graph TD
+  R((always-on 架构))
+  subgraph 循环与唤醒
+    RC[run 循环] --&gt;|事件来源| EI[事件收件箱]
+    EI --&gt;|批量与重试| RC
+  end
+  subgraph 记忆与巩固
+    MH[记忆层级] --&gt;|顶端注入| RC
+    DR[dreaming] --&gt;|纠错与构建| MH
+    DR --&gt;|原料| RC
+  end
+  subgraph 判断
+    SJ[显著性判断] --&gt;|决定写入| MH
+    SJ --&gt;|自由裁量优于固定规则| DR
+  end
+  R --&gt; RC
+  R --&gt; DR
+</code>
+</pre>
+
+<h2 id="本讲小结"><a href="#本讲小结" class="headerlink" title="本讲小结"></a>本讲小结</h2><table>
+<thead>
+<tr>
+<th>机制&#x2F;概念</th>
+<th>解决什么问题</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>睡眠-run 循环</td>
+<td>无人值守的成本与可靠性</td>
+<td>睡眠零成本，run 短而循环无限</td>
+</tr>
+<tr>
+<td>事件收件箱</td>
+<td>并发竞争与崩溃丢事件</td>
+<td>持久表+handler+worker，inbox 为事实源</td>
+</tr>
+<tr>
+<td>Deferred tool call</td>
+<td>无人值守下的审批</td>
+<td>挂起调用、session 存中途、批准变 inbox 事件</td>
+</tr>
+<tr>
+<td>记忆层级+dreaming</td>
+<td>笔记会错会旧、知识难导航</td>
+<td>离线对照 transcripts 纠错、建 wiki、修剪注入层</td>
+</tr>
+<tr>
+<td>显著性自由裁量</td>
+<td>预设规则限制记忆价值</td>
+<td>告诉目的不规定用法，「只记失败」反噬强模型</td>
+</tr>
+</tbody></table>
+<p><strong>学完能说的 3 句话：</strong></p>
+<ol>
+<li>Always-on 是短 run 的无限循环：inbox 管唤醒、timers 管主动、memory 管携带、permissions 管边界、outbox 管送达。</li>
+<li>Agent 记忆是四层层级加离线巩固：dreaming 用空闲算力对照 transcripts 纠错、建表示、修剪注入层。</li>
+<li>写记忆是下预测注：强模型靠自由裁量判断显著性，固定规则（如只记失败）实测降低记忆增益。</li>
+</ol>
+<h2 id="概念卡片"><a href="#概念卡片" class="headerlink" title="概念卡片"></a>概念卡片</h2><h3 id="run-循环"><a href="#run-循环" class="headerlink" title="run 循环"></a>run 循环</h3><ul>
+<li>定义：agent 睡眠-唤醒的工作单元：接收事件、在 session 内完成工作、写回状态后回去睡眠</li>
+<li>出现：第 2 节「Always-on 是错觉：睡眠-运行循环」、第 9 节「串联两张蓝图：dreaming 就是循环里的一种 run」</li>
+<li>依赖：</li>
+<li>易混：事件收件箱——run 是工作单元，inbox 是唤醒它的事件队列</li>
+</ul>
+<h3 id="事件收件箱"><a href="#事件收件箱" class="headerlink" title="事件收件箱"></a>事件收件箱</h3><ul>
+<li>定义：持久化事件列表加 handler 与 worker 的三件套，作为唯一事实源防并发竞争与崩溃丢事件</li>
+<li>出现：第 3 节「五原语上：事件收件箱与定时器」、第 9 节「串联两张蓝图：dreaming 就是循环里的一种 run」</li>
+<li>依赖：run 循环</li>
+<li>易混：</li>
+</ul>
+<h3 id="记忆层级"><a href="#记忆层级" class="headerlink" title="记忆层级"></a>记忆层级</h3><ul>
+<li>定义：transcripts→notes→表示（wiki）→注入context 的四层结构，常载索引、按需详情、顶端配额化</li>
+<li>出现：第 6 节「记忆层级与 dreaming：agent 的睡眠」、第 8 节「数字与边界：wiki 何时有效何时失效」</li>
+<li>依赖：run 循环</li>
+<li>易混：dreaming——层级是存储结构，dreaming 是层间搬运与巩固的过程</li>
+</ul>
+<h3 id="dreaming"><a href="#dreaming" class="headerlink" title="dreaming"></a>dreaming</h3><ul>
+<li>定义：利用空闲时间对照 transcripts 反思记忆的离线过程：纠错、建表示、提升注入、聚焦目标、补缺口</li>
+<li>出现：第 6 节「记忆层级与 dreaming：agent 的睡眠」、第 8 节「数字与边界：wiki 何时有效何时失效」</li>
+<li>依赖：记忆层级</li>
+<li>易混：</li>
+</ul>
+<h3 id="显著性判断"><a href="#显著性判断" class="headerlink" title="显著性判断"></a>显著性判断</h3><ul>
+<li>定义：在当下预测「什么值得记」的能力；强模型靠自由裁量，预设固定规则实测有害</li>
+<li>出现：第 7 节「写什么是一种预测：显著性与学习闭环」、第 8 节「数字与边界：wiki 何时有效何时失效」</li>
+<li>依赖：记忆层级</li>
+<li>易混：dreaming——显著性管写入时的选择，dreaming 管写入后的纠正与重组</li>
+</ul>
+<h2 id="自测题（面试速答）"><a href="#自测题（面试速答）" class="headerlink" title="自测题（面试速答）"></a>自测题（面试速答）</h2><ol>
+<li>为什么不能让事件源直接调用 agent？收件箱三件套与四条最佳实践各防什么故障？（对应：事件收件箱）</li>
+</ol>
+<p><strong>答案：</strong> 直接调用有两个致命故障：并发事件启动相互竞争的 run（重复劳动、互相覆盖），进程崩溃彻底丢失事件。三件套（持久事件表、写表的 handler、读表的 worker）把「到达」与「处理」解耦；四条实践分别防：handler 快速 ACK 防 webhook 提供方把慢响应当失败；inbox 为事实源使 worker 崩溃后新 worker 可捡同一事件重试；单活跃 worker 防并发 run 互相覆盖；批量合并防用户连发消息触发多次 run。定时器也只往 inbox 投事件，保证唤醒路径唯一、可审计。</p>
+<ol start="2">
+<li>记忆层级自底向上四层是什么？dreaming 在层间做哪五件事？（对应：记忆层级）</li>
+</ol>
+<p><strong>答案：</strong> 四层是 transcripts（可搜索事件日志）、memory notes（会话内写下的显著观察）、memory representations（wiki 等组织化表示）、injected context（每次会话预载的顶端上下文）。Dreaming 利用离线算力做五件事：对照 transcripts 纠正错误笔记、构建 wiki 等新表示、把笔记提升到注入层、按特定目标聚焦记忆生长、填补跨会话遗留缺口（如悬空链接）。顶端必须配额化（如 MEMORY.md 前 200 行&#x2F;25KB），因为注入内容每次会话都花 token 且错笔记会被带进每个会话。</p>
+<ol start="3">
+<li>为什么「只记录失败」这类固定规则反而降低强模型的记忆收益？Pokémon 对比说明了什么？（对应：显著性判断）</li>
+</ol>
+<p><strong>答案：</strong> 因为写记忆本质是对未来需求的预测，预设规则砍掉了模型对显著性的自由裁量：实测「只记失败」使 Opus 5 记忆增益 −0.234、Opus 4.7 −0.150，而只告知「有记忆文件夹可用」就足以让强模型有效使用。Pokémon 对比说明显著性判断的另一面——记什么比记多少重要：Sonnet 3.7 无差别写 413 个文件（多为屏幕上随时可读、且持续过期的状态）只得 1 徽章还陷入翻记忆的空转；Fable 5 只写 9 个文件（策略、计划、验证过的规则）得 4 徽章。即：只记查不回来的、会过期的不记。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/agent/" rel="tag"># agent</a>
+              <a href="/tags/Anthropic/" rel="tag"># Anthropic</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%A7%A3%E8%AF%BB/" rel="tag"># 架构解读</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/18/mhc-vs-attnres-opposite-directions/" rel="prev" title="mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择">
+                  <i class="fa fa-angle-left"></i> mHC 与 AttnRes：同改残差、方向相反——约束换稳定 vs 注意力换选择
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">高鸿烨</span>
+  </div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+<script>
+// 点击页面任意处，随机切换到另一张背景（不会连续两张相同）
+// 背景通过 CSS 变量 --site-bg 挂在 body::before 固定层上（见 styles.styl）
+(function () {
+  var bgs = [
+    '/images/bg/bg-1.svg',
+    '/images/bg/bg-2.svg',
+    '/images/bg/bg-3.svg',
+    '/images/bg/bg-4.svg',
+    '/images/bg/bg-5.svg',
+    '/images/bg/bg-6.svg'
+  ];
+  var current = 0;
+  // 预加载，避免首次点击时闪白
+  bgs.forEach(function (u) { var img = new Image(); img.src = u; });
+  document.addEventListener('click', function () {
+    var next;
+    do { next = Math.floor(Math.random() * bgs.length); } while (next === current);
+    current = next;
+    document.documentElement.style.setProperty('--site-bg', 'url(' + bgs[current] + ')');
+  });
+})();
+</script>
+
+</body>
+</html>
